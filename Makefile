@@ -1,3 +1,12 @@
-all:
-	g++ -O3 -march=native -mavx2 -std=c++17 rle_egc.cpp -o rle_egc
-	g++ -O3 -march=native -mavx2 -std=c++17 unrle_egc.cpp -o unrle_egc
+CPPFLAGS=-O3 -std=c++17 -march=native -mavx2 -pedantic -Wall
+
+all: rle_egp unrle_egp
+
+rle_egp:   bitpacker.o rle_egp.cpp elias_gamma_packer.h
+	g++ ${CPPFLAGS} -o rle_egp   rle_egp.cpp bitpacker.o
+
+unrle_egp: bitpacker.o unrle_egp.cpp elias_gamma_packer.h
+	g++ ${CPPFLAGS} -o unrle_egp unrle_egp.cpp bitpacker.o
+
+bitpacker.o: bitpacker.cpp bitpacker.h
+	g++ ${CPPFLAGS} -c bitpacker.cpp

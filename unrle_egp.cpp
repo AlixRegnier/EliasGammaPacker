@@ -10,14 +10,14 @@
 #include <vector>
 #include <cstring>
 
-#include "EliasGammaPacker.h"
+#include "elias_gamma_packer.h"
 
 
 int main(int argc, char ** args) {
 
     if(argc != 3)
     {
-        std::cout << "Usage: unrle_egc <input> <output>\n" << std::endl;
+        std::cout << "Usage: unrle_egp <input> <output>\n" << std::endl;
         return 1;
     }
 
