@@ -5,12 +5,19 @@
 #include <unistd.h>
 #include <immintrin.h>
 #include <cstdint>
-#include "EliasDeltaPacker.h"
+#include "EliasGammaPacker.h"
 
 int main(int argc, char ** args) {
+
+    if(argc != 3)
+    {
+        std::cout << "Usage: rle_egc <input> <output>\n" << std::endl;
+        return 1;
+    }
+
     const char* filename = args[1];
 
-    EliasDeltaPacker edp;
+    EliasGammaPacker egp;
 
     int fd = open(filename, O_RDONLY);
     if (fd == -1) {
@@ -75,7 +82,7 @@ int main(int argc, char ** args) {
                 if (currentBit == prevBit) {
                     ++runLength;
                 } else {
-                    edp.pack(runLength);
+                    egp.pack(runLength);
                     runLength = 1;
                     prevBit = currentBit;
                 }
@@ -94,7 +101,7 @@ int main(int argc, char ** args) {
             if (currentBit == prevBit) {
                 ++runLength;
             } else {
-                edp.pack(runLength);
+                egp.pack(runLength);
                 runLength = 1;
                 prevBit = currentBit;
             }
@@ -104,13 +111,13 @@ int main(int argc, char ** args) {
 
     // Print final run
     if (runLength > 0) {
-        edp.pack(runLength);
+        egp.pack(runLength);
     }
 
     munmap(map, fileSize);
     close(fd);
 
-    edp.dump(args[2]);
+    egp.serialize(args[2]);
 
     return 0;
 }

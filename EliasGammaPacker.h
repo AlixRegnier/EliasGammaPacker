@@ -1,5 +1,5 @@
-#ifndef ELIAS_DELTA_PACKER_H
-#define ELIAS_DELTA_PACKER_H
+#ifndef ELIAS_GAMMA_PACKER_H
+#define ELIAS_GAMMA_PACKER_H
 
 #include <cstdint>
 #include <stdexcept>
@@ -72,9 +72,9 @@ public:
             size_t bits_in_first_byte = std::min(8 - bit_offset, bits_remaining);
             uint8_t mask = (1 << bits_in_first_byte) - 1;
             uint8_t bits_to_pack = (value >> (bits_remaining - bits_in_first_byte)) & mask;
-            
+
             data[byte_idx] |= bits_to_pack << (8 - bit_offset - bits_in_first_byte);
-            
+
             bits_remaining -= bits_in_first_byte;
             byte_idx++;
         }
@@ -162,10 +162,6 @@ public:
 
         std::uint8_t l = log2_8(masked_byte);
 
-        /*std::cout << "[" << (starting_bit_pos/8) << "] : log2(";
-        printByte(masked_byte);
-        std::cout << ") = " << (unsigned)l << std::endl;*/
-
         //Return first 1 position in masked byte if any
         if(l || (masked_byte & std::uint8_t{1})) //If a one occurs in first byte
             return 7 - l + starting_bit_pos/8*8;
@@ -173,9 +169,6 @@ public:
         for(std::size_t i = starting_bit_pos/8+1; i < data.size(); ++i)
         {
             l = log2_8(data[i]);
-            /*std::cout << "[" << i << "] : log2(";
-            printByte(data[i]);
-            std::cout << ") = " << (unsigned)l << std::endl;*/
 
             if(l || (data[i] & std::uint8_t{1}))
                 return 7 - l + i*8;
@@ -207,53 +200,67 @@ public:
         std::cout << std::endl;
     }
 
-    void dump(const std::string& output_file)
+    void serialize(const std::string& output_file) const
     {
         std::ofstream f(output_file, std::ofstream::binary);
 
         for(std::size_t i = 0; i < data.size(); ++i)
             f << data[i];
-        
+
         f.close();
     }
-    
+
+    void deserialize(const std::string& input_file)
+    {
+        std::ifstream f(input_file, std::ifstream::binary | std::ifstream::ate);
+
+        std::streamsize size = f.tellg();  // Get position (size)
+
+        f.seekg(0, std::ios::beg); //Reset cursor to beginning
+
+        if(size <= 0)
+            throw std::runtime_error("File size is incorrect");
+
+        data.resize(size);
+
+        if(!f.read(reinterpret_cast<char*>(data.data()), size))
+        {
+            f.close();
+            throw std::runtime_error("Couldn't read file");
+        }
+        bit_position = size*8;
+        f.close();
+    }
+
     virtual ~BitPacker() {}
 };
 
-class EliasDeltaPacker : public BitPacker
+class EliasGammaPacker : public BitPacker
 {
 private:
     size_t next_elias_position{0};
-    size_t nb_packed_elias{0};
 
     static std::uint64_t elias_delta_bit_length(std::uint64_t x)
     {
         return 2*log2_64(x)+1;
     }
 public:
-    EliasDeltaPacker() = default;
+    EliasGammaPacker() = default;
 
     void pack(std::uint64_t value)
     {
-        BitPacker::pack(value+1, elias_delta_bit_length(value+1));
-        ++nb_packed_elias;
+        //std::cout << value << " " << elias_delta_bit_length(value+1) << std::endl;
+        BitPacker::pack(value, elias_delta_bit_length(value));
     }
 
-    std::size_t get_packed_elias_delta() const
-    {
-        return nb_packed_elias;
-    }
-    
     std::uint64_t unpack()
     {
         std::size_t a = next_elias_position;
         std::size_t b = get_next_one_pos(next_elias_position);
-        //std::cout << "l:" << b << std::endl;
+
         b += b - a;
         next_elias_position = b+1;
-        /*std::cout << "n:" << next_elias_position << std::endl;
-        std::cout << "(" << a << ", " << (b-a+1) << ")" << std::endl;*/
-        return BitPacker::unpack(a, b-a+1)-1;
+        return BitPacker::unpack(a, b-a+1);
     }
 };
 
