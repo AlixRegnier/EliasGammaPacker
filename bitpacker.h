@@ -10,7 +10,8 @@ class BitPacker
 {
 protected:
     std::vector<std::uint8_t> data;
-    std::size_t bit_position{0};  // Current bit position in the data vector
+    std::uint64_t bit_position{0};  // Current bit position in the data vector
+    std::uint64_t packed_values{0}; // Number of times "pack()" as been called
 
     static const std::uint8_t tab64[64];
     static const std::uint8_t tab8[8];
@@ -59,9 +60,15 @@ public:
     }
 
     // Get the number of bits packed
-    std::size_t get_bit_count() const
+    std::uint64_t get_bit_count() const
     {
         return bit_position;
+    }
+
+    // Get the number of packed values
+    std::uint64_t get_packed_values_count() const
+    {
+        return packed_values;
     }
 
     // Get the number of bytes used (rounded up)

@@ -42,6 +42,8 @@ void BitPacker::pack(std::uint64_t value, std::size_t num_bits) {
         throw std::invalid_argument("value too large for specified number of bits");
     }
 
+    ++packed_values;
+
     std::size_t byte_idx = bit_position / 8;
     std::size_t bit_offset = bit_position % 8;
     std::size_t bits_remaining = num_bits;
@@ -144,7 +146,7 @@ std::size_t BitPacker::get_next_one_pos(std::size_t starting_bit_pos)
             return 7 - l + i*8;
     }
 
-    throw std::runtime_error("Couldn't find any more 1");
+    throw std::runtime_error("Couldn't find any more one from this position");
 }
 
 void BitPacker::print() const
@@ -162,6 +164,12 @@ void BitPacker::serialize(const std::string& output_file) const
 {
     std::ofstream f(output_file, std::ofstream::binary);
 
+    //Serialize bit position
+    f.write(reinterpret_cast<const char*>(&bit_position), sizeof(bit_position));
+
+    //Serialize number of packed values
+    f.write(reinterpret_cast<const char*>(&packed_values), sizeof(packed_values));
+
     for(std::size_t i = 0; i < data.size(); ++i)
         f << data[i];
 
@@ -170,23 +178,22 @@ void BitPacker::serialize(const std::string& output_file) const
 
 void BitPacker::deserialize(const std::string& input_file)
 {
-    std::ifstream f(input_file, std::ifstream::binary | std::ifstream::ate);
+    std::ifstream f(input_file, std::ifstream::binary);
 
-    std::streamsize size = f.tellg();  // Get position (size)
+    //Deserialize bit position (number of bits)
+    f.read(reinterpret_cast<char*>(&bit_position), sizeof(bit_position));
 
-    f.seekg(0, std::ios::beg); //Reset cursor to beginning
+    //Deserialize number of packed values
+    f.read(reinterpret_cast<char*>(&packed_values), sizeof(packed_values));
 
-    if(size <= 0)
-        throw std::runtime_error("File size is incorrect");
+    data.resize((bit_position+7)/8);
 
-    data.resize(size);
-
-    if(!f.read(reinterpret_cast<char*>(data.data()), size))
+    if(!f.read(reinterpret_cast<char*>(data.data()), data.size()))
     {
         f.close();
         throw std::runtime_error("Couldn't read file");
     }
-    bit_position = size*8;
+
     f.close();
 }
 

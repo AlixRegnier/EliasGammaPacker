@@ -49,80 +49,80 @@ int main(int argc, char ** args) {
     int bit_pos = 7;              // MSB-first
     bool bit_value = false;       // start with 0-run
     std::uint64_t run_length;
-    try
-    {
-	    while(true)
-	    {
-	        run_length = egp.unpack();
+	
+	std::uint64_t i = 0;
+	const std::uint64_t PACKED_VALUES = egp.get_packed_values_count();
 
-	        // Handle unaligned partial byte first
-	        while (run_length > 0 && bit_pos != 7)
-	        {
-	            if (bit_value)
-	                current_byte |= (1u << bit_pos);
+	while(i++ < PACKED_VALUES)
+	{
+		run_length = egp.unpack();
 
-	            bit_pos--;
-	            run_length--;
+		// Handle unaligned partial byte first
+		while (run_length > 0 && bit_pos != 7)
+		{
+			if (bit_value)
+				current_byte |= (1u << bit_pos);
 
-	            if (bit_pos < 0)
-	            {
-	                write_byte(current_byte);
-	                current_byte = 0;
-	                bit_pos = 7;
-	            }
-	        }
+			bit_pos--;
+			run_length--;
 
-	        // Now we are byte-aligned
-	        if (run_length >= 8)
-	        {
-	            uint8_t fill_byte = bit_value ? 0xFF : 0x00;
+			if (bit_pos < 0)
+			{
+				write_byte(current_byte);
+				current_byte = 0;
+				bit_pos = 7;
+			}
+		}
 
-	            // Number of full bytes
-	            uint64_t full_bytes = run_length / 8;
-	            run_length %= 8;
+		// Now we are byte-aligned
+		if (run_length >= 8)
+		{
+			uint8_t fill_byte = bit_value ? 0xFF : 0x00;
 
-	            // Emit 32-byte AVX blocks
-	            __m256i vec = _mm256_set1_epi8(static_cast<char>(fill_byte));
+			// Number of full bytes
+			uint64_t full_bytes = run_length / 8;
+			run_length %= 8;
 
-	            while (full_bytes >= 32)
-	            {
-	                if (buffer_pos + 32 > BUFFER_SIZE)
-	                    flush_buffer();
+			// Emit 32-byte AVX blocks
+			__m256i vec = _mm256_set1_epi8(static_cast<char>(fill_byte));
 
-	                _mm256_storeu_si256(
-	                    reinterpret_cast<__m256i*>(buffer.data() + buffer_pos),
-	                    vec);
+			while (full_bytes >= 32)
+			{
+				if (buffer_pos + 32 > BUFFER_SIZE)
+					flush_buffer();
 
-	                buffer_pos += 32;
-	                full_bytes -= 32;
-	            }
+				_mm256_storeu_si256(
+					reinterpret_cast<__m256i*>(buffer.data() + buffer_pos),
+					vec);
 
-	            // Emit remaining full bytes
-	            while (full_bytes--)
-	                write_byte(fill_byte);
-	        }
+				buffer_pos += 32;
+				full_bytes -= 32;
+			}
 
-	        // Handle tail bits (< 8)
-	        while (run_length > 0)
-	        {
-	            if (bit_value)
-	                current_byte |= (1u << bit_pos);
+			// Emit remaining full bytes
+			while (full_bytes--)
+				write_byte(fill_byte);
+		}
 
-	            bit_pos--;
-	            run_length--;
+		// Handle tail bits (< 8)
+		while (run_length > 0)
+		{
+			if (bit_value)
+				current_byte |= (1u << bit_pos);
 
-	            if (bit_pos < 0)
-	            {
-	                write_byte(current_byte);
-	                current_byte = 0;
-	                bit_pos = 7;
-	            }
-	        }
+			bit_pos--;
+			run_length--;
 
-	        bit_value = !bit_value;
-	    }
-    }
-    catch(std::runtime_error& e){}
+			if (bit_pos < 0)
+			{
+				write_byte(current_byte);
+				current_byte = 0;
+				bit_pos = 7;
+			}
+		}
+
+		bit_value = !bit_value;
+	}
 
     // Flush partial byte
     if (bit_pos != 7)

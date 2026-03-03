@@ -23,7 +23,7 @@ public:
     std::uint64_t unpack()
     {
         std::size_t previous_position = next_elias_position;
-        next_elias_position = 2*get_next_one_pos(previous_position)+1;
+        next_elias_position = 2*get_next_one_pos(previous_position)-previous_position+1;
         return BitPacker::unpack(previous_position, next_elias_position-previous_position);
     }
 };
