@@ -34,12 +34,12 @@ void BitPacker::printByte(std::uint8_t byte)
 // Pack a value with specified number of bits
 void BitPacker::pack(std::uint64_t value, std::size_t num_bits) {
     if (num_bits == 0 || num_bits > 64) {
-        throw std::invalid_argument("num_bits must be between 1 and 64");
+        throw std::invalid_argument("BitPacker::pack : num_bits must be between 1 and 64");
     }
 
     // Ensure value fits in num_bits
     if (num_bits < 64 && value >= (1ULL << num_bits)) {
-        throw std::invalid_argument("value too large for specified number of bits");
+        throw std::invalid_argument("BitPacker::pack : value too large for specified number of bits");
     }
 
     ++packed_values;
@@ -86,11 +86,11 @@ void BitPacker::pack(std::uint64_t value, std::size_t num_bits) {
 // Unpack a value with specified number of bits
 std::uint64_t BitPacker::unpack(std::size_t start_bit, std::size_t num_bits) const {
     if (num_bits == 0 || num_bits > 64) {
-        throw std::invalid_argument("num_bits must be between 1 and 64");
+        throw std::invalid_argument("BitPacker::unpack : num_bits must be between 1 and 64");
     }
 
     if (start_bit + num_bits > bit_position) {
-        throw std::out_of_range("attempting to read beyond packed data");
+        throw std::out_of_range("BitPacker::unpack : attempting to read beyond packed data");
     }
 
     std::uint64_t result = 0;
@@ -146,7 +146,7 @@ std::size_t BitPacker::get_next_one_pos(std::size_t starting_bit_pos)
             return 7 - l + i*8;
     }
 
-    throw std::runtime_error("Couldn't find any more one from this position");
+    throw std::runtime_error("BitPacker::get_next_one_pos : Couldn't find any more one from this position");
 }
 
 void BitPacker::print() const
@@ -180,6 +180,12 @@ void BitPacker::deserialize(const std::string& input_file)
 {
     std::ifstream f(input_file, std::ifstream::binary);
 
+    if(!f.is_open())
+    {
+        f.close();
+        throw std::runtime_error("BitPacker::deserialize : couldn't open file '" + input_file + "'");
+    }
+    
     //Deserialize bit position (number of bits)
     f.read(reinterpret_cast<char*>(&bit_position), sizeof(bit_position));
 
@@ -191,7 +197,7 @@ void BitPacker::deserialize(const std::string& input_file)
     if(!f.read(reinterpret_cast<char*>(data.data()), data.size()))
     {
         f.close();
-        throw std::runtime_error("Couldn't read file");
+        throw std::runtime_error("BitPacker::deserialize : unexpected file size");
     }
 
     f.close();

@@ -47,13 +47,12 @@ int main(int argc, char ** args) {
 
     uint8_t current_byte = 0;
     int bit_pos = 7;              // MSB-first
-    bool bit_value = false;       // start with 0-run
     std::uint64_t run_length;
-	
 	std::uint64_t i = 0;
-	const std::uint64_t PACKED_VALUES = egp.get_packed_values_count();
+	std::uint64_t packed_values = egp.get_packed_values_count();
+    bool bit_value = egp.get_first_bit();
 
-	while(i++ < PACKED_VALUES)
+	while(i++ < packed_values)
 	{
 		run_length = egp.unpack();
 

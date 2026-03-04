@@ -49,9 +49,9 @@ public:
     // Get position of next bit set to one from a starting position
     std::size_t get_next_one_pos(std::size_t starting_bit_pos);
 
-    void serialize(const std::string& output_file) const;
+    virtual void serialize(const std::string& output_file) const;
 
-    void deserialize(const std::string& input_file);
+    virtual void deserialize(const std::string& input_file);
     
     // Get the underlying data
     const std::vector<std::uint8_t>& get_data() const 
