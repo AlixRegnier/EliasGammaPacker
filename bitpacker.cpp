@@ -170,8 +170,8 @@ void BitPacker::serialize(const std::string& output_file) const
     //Serialize number of packed values
     f.write(reinterpret_cast<const char*>(&packed_values), sizeof(packed_values));
 
-    for(std::size_t i = 0; i < data.size(); ++i)
-        f << data[i];
+    //Serialize payload
+    f.write(reinterpret_cast<const char*>(data.data()), data.size());
 
     f.close();
 }
