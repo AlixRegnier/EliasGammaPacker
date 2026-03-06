@@ -44,6 +44,12 @@ public:
     {
         std::ofstream f(output_file, std::ofstream::binary);
 
+        if(!f.is_open())
+        {
+            f.close();
+            throw std::runtime_error("EliasGammaPacker::serialize : couldn't open file '" + output_file + "'");
+        }
+
         //Serialize bit position
         f.write(reinterpret_cast<const char*>(&bit_position), sizeof(bit_position));
 

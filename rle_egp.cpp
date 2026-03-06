@@ -16,13 +16,14 @@ int main(int argc, char ** args) {
         return 1;
     }
 
-    std::string filename = args[1];
+    std::string input_filename = args[1];
+    std::string output_filename = args[2];
 
     EliasGammaPacker egp;
 
-    int fd = open(filename.c_str(), O_RDONLY);
+    int fd = open(input_filename.c_str(), O_RDONLY);
     if (fd == -1)
-        throw std::runtime_error("main : couldn't open file '" + filename + "'");
+        throw std::runtime_error("main : couldn't open file '" + input_filename + "'");
 
 
     std::size_t file_size = lseek(fd, 0, SEEK_END);
@@ -68,7 +69,7 @@ int main(int argc, char ** args) {
     munmap(map, file_size);
     close(fd);
 
-    egp.serialize(args[2]);
+    egp.serialize(output_filename);
 
     return 0;
 }
