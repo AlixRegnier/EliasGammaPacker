@@ -57,8 +57,9 @@ public:
         std::uint64_t packed_values_and_first_bit = packed_values << 1 | first_bit;
         f.write(reinterpret_cast<const char*>(&packed_values_and_first_bit), sizeof(packed_values_and_first_bit));
 
-        for(std::size_t i = 0; i < data.size(); ++i)
-            f << data[i];
+        //Serialize payload
+        const std::size_t payload_size = (bit_position + 7) / 8;
+        f.write(reinterpret_cast<const char*>(data.data()), payload_size);
 
         f.close();
     }

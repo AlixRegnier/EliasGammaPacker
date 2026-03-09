@@ -48,11 +48,10 @@ void BitPacker::pack(std::uint64_t value, std::size_t num_bits) {
     std::size_t bit_offset = bit_position % 8;
     std::size_t bits_remaining = num_bits;
 
-    // Ensure we have enough space
+    // Ensure there is enough place, increase size by 50% if not
     std::size_t bytes_needed = (bit_position + num_bits + 7) / 8;
-    if (data.size() < bytes_needed) {
-        data.resize(bytes_needed, 0);
-    }
+    if (data.size() < bytes_needed)
+        data.resize(std::max(data.size()*3/2, bytes_needed));
 
     // If we're not byte-aligned, handle the first partial byte
     if (bit_offset != 0) {
@@ -177,7 +176,8 @@ void BitPacker::serialize(const std::string& output_file) const
     f.write(reinterpret_cast<const char*>(&packed_values), sizeof(packed_values));
 
     //Serialize payload
-    f.write(reinterpret_cast<const char*>(data.data()), data.size());
+    const std::size_t payload_size = (bit_position + 7) / 8;
+    f.write(reinterpret_cast<const char*>(data.data()), payload_size);
 
     f.close();
 }

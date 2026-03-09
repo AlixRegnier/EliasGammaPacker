@@ -42,7 +42,9 @@ int main(int argc, char ** args) {
     std::size_t i = 0;
 
     std::uint8_t prevBit = (data[0] >> 7) & 1;
+
     egp.set_first_bit(prevBit);
+    egp.resize(1 << 26); //Set initial vector of bytes to 64MB
 
     // Process each bits
     for (; i < file_size; ++i) {

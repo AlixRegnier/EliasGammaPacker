@@ -59,6 +59,14 @@ public:
         return data;
     }
 
+    void resize(std::size_t new_size)
+    {
+        if((bit_position+7)/8 > new_size)
+            bit_position = new_size*8;
+
+        data.resize(new_size);
+    }
+
     // Get the number of bits packed
     std::uint64_t get_bit_count() const
     {
