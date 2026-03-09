@@ -14,7 +14,7 @@ protected:
     std::uint64_t packed_values{0}; // Number of times "pack()" as been called
 
     static const std::uint8_t tab64[64];
-    static const std::uint8_t tab8[8];
+    static const std::uint8_t tab8[256];
 
     static std::uint8_t log2_64(std::uint64_t value)
     {
@@ -29,10 +29,11 @@ protected:
 
     static std::uint8_t log2_8(std::uint8_t value)
     {
-        value |= value >> 1;
-        value |= value >> 2;
-        value |= value >> 4;
-        return tab8[((std::uint8_t)((value - (value >> 1))*0x1D)) >> 5];
+        // value |= value >> 1;
+        // value |= value >> 2;
+        // value |= value >> 4;
+        // return tab8[((std::uint8_t)((value - (value >> 1))*0x1D)) >> 5];
+        return tab8[value];
     }
 
     static void printByte(std::uint8_t byte);
@@ -47,7 +48,7 @@ public:
     std::uint64_t unpack(std::size_t start_bit, std::size_t num_bits) const;
 
     // Get position of next bit set to one from a starting position
-    std::size_t get_next_one_pos(std::size_t starting_bit_pos);
+    std::size_t get_next_one_pos(std::size_t starting_bit_pos) const;
 
     virtual void serialize(const std::string& output_file) const;
 
