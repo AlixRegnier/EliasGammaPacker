@@ -40,7 +40,7 @@ protected:
     
     // Swap bytes of a 64-bit integer to big endian
     static std::uint64_t toBigEndian64(std::uint64_t val) {
-        #if __BYTE_ORDER__ != __ORDER_BIG_ENDIAN__
+        #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
             return val;  // Already big endian
         #else
             return __builtin_bswap64(val);

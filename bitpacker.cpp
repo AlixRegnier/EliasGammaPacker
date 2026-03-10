@@ -82,8 +82,8 @@ void BitPacker::pack(std::uint64_t value, std::size_t num_bits) {
     constexpr unsigned mod64 = 63;
     constexpr unsigned siz64 = 8*sizeof(std::uint64_t);
 
-    const std::size_t p_index = bit_position >> log64; //divide by (8*sizeof(std::uint64_t))
-    const std::size_t p_offset = bit_position & mod64; //mod    by (8*sizeof(std::uint64_t))
+    const std::size_t p_index =  bit_position >> log64; //divide by (8*sizeof(std::uint64_t))
+    const std::size_t p_offset = bit_position  & mod64; //mod    by (8*sizeof(std::uint64_t))
 
     // // Ensure there is enough place, increase size by 50% if not
     // std::size_t bytes_needed = (bit_position + num_bits + sizeof(std::uint64_t)*8 - 1) / (8*sizeof(std::uint64_t));
@@ -111,25 +111,25 @@ std::uint64_t BitPacker::unpack(std::size_t start_bit, std::size_t num_bits) con
         throw std::out_of_range("BitPacker::unpack : attempting to read beyond packed data");
     }
 
-    const std::size_t p_index = start_bit / (8*sizeof(std::uint64_t));
-    const std::size_t p_offset = start_bit % (8*sizeof(std::uint64_t));
+    constexpr unsigned log64 = 6;
+    constexpr unsigned mod64 = 63;
+    constexpr unsigned siz64 = 8*sizeof(std::uint64_t);
 
-    const int shift =  (sizeof(std::uint64_t)*8 - num_bits - p_offset);
+    const std::size_t p_index =  bit_position >> log64; //divide by (8*sizeof(std::uint64_t))
+    const std::size_t p_offset = bit_position  & mod64; //mod    by (8*sizeof(std::uint64_t))
+
+     __uint128_t window =
+        (static_cast<__uint128_t>(data[p_index]) << siz64) |
+        data[p_index + 1];
+
+    std::size_t shift = siz64 - p_offset - num_bits + siz64;
+
+    std::uint64_t result = static_cast<std::uint64_t>(window >> shift);
+
+    if (num_bits < siz64)
+        result &= ((std::uint64_t{1} << num_bits) - 1);
     
-    //Fit in current word
-    if(p_offset + num_bits <= sizeof(std::uint64_t)*8)
-    {
-        const std::uint64_t mask = (~std::uint64_t{0}) >> (sizeof(std::uint64_t)*8 - num_bits);
-
-        return (data[p_index] >> shift) & mask;
-    }
-    //Need to split
-    else
-    {
-        const std::uint64_t mask = (~std::uint64_t{0}) >> p_offset;
-
-        return ((data[p_index] & mask) << -shift) | (data[p_index+1] >> (sizeof(std::uint64_t)*8 - shift));
-    }
+    return result;
 }
 
 std::size_t BitPacker::get_next_one_pos(std::size_t starting_bit_pos) const
@@ -220,9 +220,9 @@ void BitPacker::deserialize(const std::string& input_file)
     //Deserialize number of packed values
     f.read(reinterpret_cast<char*>(&packed_values), sizeof(packed_values));
 
-    data.resize((bit_position+7)/8);
+    data.resize((bit_position+sizeof(std::uint64_t)*8-1)/(sizeof(std::uint64_t)*8));
 
-    if(!f.read(reinterpret_cast<char*>(data.data()), data.size()))
+    if(!f.read(reinterpret_cast<char*>(data.data()), (bit_position+7)/8))
     {
         f.close();
         throw std::runtime_error("BitPacker::deserialize : unexpected file size");
