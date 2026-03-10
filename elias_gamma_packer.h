@@ -57,9 +57,21 @@ public:
         std::uint64_t packed_values_and_first_bit = packed_values << 1 | first_bit;
         f.write(reinterpret_cast<const char*>(&packed_values_and_first_bit), sizeof(packed_values_and_first_bit));
 
-        //Serialize payload
-        const std::size_t payload_size = (bit_position + 7) / 8;
-        f.write(reinterpret_cast<const char*>(data.data()), payload_size);
+        //Serialize payload as big endian
+        const std::size_t payload_size = (bit_position + sizeof(std::uint64_t)*8 - 1) / (sizeof(std::uint64_t)*8);
+        std::size_t i = 0;
+        for(; i + 1 < payload_size; ++i)
+        {
+            const std::uint64_t vBE = toBigEndian64(data[i]);
+            f.write(reinterpret_cast<const char*>(&vBE), sizeof(std::uint64_t));
+        }
+
+        //Serialize remaining payload bytes
+        if(bit_position % sizeof(std::uint64_t) != 0)
+        {
+            const std::uint64_t vBE = toBigEndian64(data[i]);
+            f.write(reinterpret_cast<const char*>(&vBE), bit_position % sizeof(std::uint64_t));
+        }
 
         f.close();
     }
