@@ -42,42 +42,16 @@ public:
 
     void serialize(const std::string& output_file) const override
     {
-        std::ofstream f(output_file, std::ofstream::binary);
-
-        if(!f.is_open())
-        {
-            f.close();
-            throw std::runtime_error("EliasGammaPacker::serialize : couldn't open file '" + output_file + "'");
-        }
-
-        //Serialize bit position
-        f.write(reinterpret_cast<const char*>(&bit_position), sizeof(bit_position));
-
         //Serialize number of packed values and starting bit_value
         std::uint64_t packed_values_and_first_bit = packed_values << 1 | first_bit;
-        f.write(reinterpret_cast<const char*>(&packed_values_and_first_bit), sizeof(packed_values_and_first_bit));
 
-        //Serialize payload as big endian
-        const std::size_t payload_size = (bit_position + sizeof(std::uint64_t)*8 - 1) / (sizeof(std::uint64_t)*8);
-        std::size_t i = 0;
-        for(; i + 1 < payload_size; ++i)
-        {
-            const std::uint64_t vBE = toBigEndian64(data[i]);
-            f.write(reinterpret_cast<const char*>(&vBE), sizeof(std::uint64_t));
-        }
-
-        //Serialize remaining payload bytes
-        if(bit_position % sizeof(std::uint64_t) != 0)
-        {
-            const std::uint64_t vBE = toBigEndian64(data[i]);
-            f.write(reinterpret_cast<const char*>(&vBE), bit_position % sizeof(std::uint64_t));
-        }
-
-        f.close();
+        //Serialize
+        BitPacker::serialize(output_file, data, bit_position, packed_values_and_first_bit);
     }
 
     void deserialize(const std::string& input_file) override
     {
+        //Deserialize
         BitPacker::deserialize(input_file);
 
         //Unpack first_bit value

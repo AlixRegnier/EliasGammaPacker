@@ -92,8 +92,8 @@ void BitPacker::pack(std::uint64_t value, std::size_t num_bits) {
 
     //const int shift = (sizeof(std::uint64_t)*8 - num_bits - p_offset);
 
-    std::uint64_t left  = value << (siz64 - p_offset - num_bits);
-    std::uint64_t right = value >> (p_offset + num_bits - siz64);
+    std::uint64_t left  = (value << (siz64 - p_offset - num_bits));
+    std::uint64_t right = (value >> (p_offset + num_bits - siz64));
 
     data[p_index]     |= left;
     data[p_index + 1] |= right;
@@ -122,7 +122,7 @@ std::uint64_t BitPacker::unpack(std::size_t start_bit, std::size_t num_bits) con
         (static_cast<__uint128_t>(data[p_index]) << siz64) |
         data[p_index + 1];
 
-    std::size_t shift = siz64 - p_offset - num_bits + siz64;
+    std::size_t shift = 2*siz64 - p_offset - num_bits;
 
     std::uint64_t result = static_cast<std::uint64_t>(window >> shift);
 
@@ -171,6 +171,11 @@ void BitPacker::print() const
 
 void BitPacker::serialize(const std::string& output_file) const
 {
+    serialize(output_file, data, bit_position, packed_values);
+}
+
+void BitPacker::serialize(const std::string& output_file, const std::vector<std::uint64_t>& data, std::uint64_t bit_position, std::uint64_t packed_values)
+{
     std::ofstream f(output_file, std::ofstream::binary);
 
     if(!f.is_open())
@@ -186,19 +191,20 @@ void BitPacker::serialize(const std::string& output_file) const
     f.write(reinterpret_cast<const char*>(&packed_values), sizeof(packed_values));
 
     //Serialize payload as big endian
-    const std::size_t payload_size = (bit_position + sizeof(std::uint64_t)*8 - 1) / (sizeof(std::uint64_t)*8);
+    const std::size_t payload_size = bit_position / (sizeof(std::uint64_t)*8);
     std::size_t i = 0;
-    for(; i + 1 < payload_size; ++i)
+    for(; i < payload_size; ++i)
     {
         const std::uint64_t vBE = toBigEndian64(data[i]);
         f.write(reinterpret_cast<const char*>(&vBE), sizeof(std::uint64_t));
     }
 
-    //Serialize remaining payload bytes
-    if(bit_position % sizeof(std::uint64_t) != 0)
+    //Serialize remaining payload byte
+    std::size_t remaining_bits = bit_position % (sizeof(std::uint64_t)*8);
+    if(remaining_bits != 0)
     {
         const std::uint64_t vBE = toBigEndian64(data[i]);
-        f.write(reinterpret_cast<const char*>(&vBE), bit_position % sizeof(std::uint64_t));
+        f.write(reinterpret_cast<const char*>(&vBE), (remaining_bits+7)/8);
     }
 
     f.close();

@@ -46,6 +46,8 @@ protected:
             return __builtin_bswap64(val);
         #endif
     }
+
+    static void serialize(const std::string& output_file, const std::vector<std::uint64_t>& data, std::uint64_t bit_position, std::uint64_t packed_values);
 public:
     BitPacker() = default;
     virtual ~BitPacker();
@@ -59,6 +61,7 @@ public:
     // Get position of next bit set to one from a starting position
     std::size_t get_next_one_pos(std::size_t starting_bit_pos) const;
 
+    
     virtual void serialize(const std::string& output_file) const;
 
     virtual void deserialize(const std::string& input_file);
