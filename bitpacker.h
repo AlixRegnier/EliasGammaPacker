@@ -18,13 +18,14 @@ protected:
 
     static std::uint8_t log2_64(std::uint64_t value)
     {
-        value |= value >> 1;
-        value |= value >> 2;
-        value |= value >> 4;
-        value |= value >> 8;
-        value |= value >> 16;
-        value |= value >> 32;
-        return tab64[((std::uint64_t)((value - (value >> 1))*0x07EDD5E59A4E28C2)) >> 58];
+        // value |= value >> 1;
+        // value |= value >> 2;
+        // value |= value >> 4;
+        // value |= value >> 8;
+        // value |= value >> 16;
+        // value |= value >> 32;
+        // return tab64[((std::uint64_t)((value - (value >> 1))*0x07EDD5E59A4E28C2)) >> 58];
+        return 63 - __builtin_clzll(value);
     }
 
     static std::uint8_t log2_8(std::uint8_t value)
