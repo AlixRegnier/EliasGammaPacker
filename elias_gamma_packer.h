@@ -42,30 +42,16 @@ public:
 
     void serialize(const std::string& output_file) const override
     {
-        std::ofstream f(output_file, std::ofstream::binary);
-
-        if(!f.is_open())
-        {
-            f.close();
-            throw std::runtime_error("EliasGammaPacker::serialize : couldn't open file '" + output_file + "'");
-        }
-
-        //Serialize bit position
-        f.write(reinterpret_cast<const char*>(&bit_position), sizeof(bit_position));
-
         //Serialize number of packed values and starting bit_value
         std::uint64_t packed_values_and_first_bit = packed_values << 1 | first_bit;
-        f.write(reinterpret_cast<const char*>(&packed_values_and_first_bit), sizeof(packed_values_and_first_bit));
 
-        //Serialize payload
-        const std::size_t payload_size = (bit_position + 7) / 8;
-        f.write(reinterpret_cast<const char*>(data.data()), payload_size);
-
-        f.close();
+        //Serialize
+        BitPacker::serialize(output_file, data, bit_position, packed_values_and_first_bit);
     }
 
     void deserialize(const std::string& input_file) override
     {
+        //Deserialize
         BitPacker::deserialize(input_file);
 
         //Unpack first_bit value

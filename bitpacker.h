@@ -8,23 +8,17 @@
 
 class BitPacker 
 {
-protected:
-    std::vector<std::uint8_t> data;
-    std::uint64_t bit_position{0};  // Current bit position in the data vector
-    std::uint64_t packed_values{0}; // Number of times "pack()" as been called
-
-    static const std::uint8_t tab64[64];
-    static const std::uint8_t tab8[256];
-
+public:
     static std::uint8_t log2_64(std::uint64_t value)
     {
-        value |= value >> 1;
-        value |= value >> 2;
-        value |= value >> 4;
-        value |= value >> 8;
-        value |= value >> 16;
-        value |= value >> 32;
-        return tab64[((std::uint64_t)((value - (value >> 1))*0x07EDD5E59A4E28C2)) >> 58];
+        // value |= value >> 1;
+        // value |= value >> 2;
+        // value |= value >> 4;
+        // value |= value >> 8;
+        // value |= value >> 16;
+        // value |= value >> 32;
+        // return tab64[((std::uint64_t)((value - (value >> 1))*0x07EDD5E59A4E28C2)) >> 58];
+        return 63 - __builtin_clzll(value);
     }
 
     static std::uint8_t log2_8(std::uint8_t value)
@@ -35,8 +29,36 @@ protected:
         // return tab8[((std::uint8_t)((value - (value >> 1))*0x1D)) >> 5];
         return tab8[value];
     }
+protected:
+    std::vector<std::uint64_t> data;
+    std::uint64_t bit_position{0};  // Current bit position in the data vector
+    std::uint64_t packed_values{0}; // Number of times "pack()" as been called
+
+    static const std::uint8_t tab64[64];
+    static const std::uint8_t tab8[256];
 
     static void printByte(std::uint8_t byte);
+    
+    // Swap bytes of a 64-bit integer to big endian
+    static std::uint64_t toBigEndian64(std::uint64_t val) {
+        #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+            return val;  // Already big endian
+        #else
+            return __builtin_bswap64(val);
+        #endif
+    }
+
+    // Swap bytes of a 64-bit integer to little endian
+    static std::uint64_t toLittleEndian64(std::uint64_t val) {
+        #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+            return val;  // Already little endian
+        #else
+            return __builtin_bswap64(val);
+        #endif
+    }
+
+
+    static void serialize(const std::string& output_file, const std::vector<std::uint64_t>& data, std::uint64_t bit_position, std::uint64_t packed_values);
 public:
     BitPacker() = default;
     virtual ~BitPacker();
@@ -50,12 +72,13 @@ public:
     // Get position of next bit set to one from a starting position
     std::size_t get_next_one_pos(std::size_t starting_bit_pos) const;
 
+    
     virtual void serialize(const std::string& output_file) const;
 
     virtual void deserialize(const std::string& input_file);
     
     // Get the underlying data
-    const std::vector<std::uint8_t>& get_data() const 
+    const std::vector<std::uint64_t>& get_data() const 
     {
         return data;
     }
