@@ -5,6 +5,7 @@
 #include <bits/stdc++.h>
 #include <vector>
 
+//log2_64(0) = 63
 const std::uint8_t BitPacker::tab64[] = {
     63,  0, 58,  1, 59, 47, 53,  2,
     60, 39, 48, 27, 54, 33, 42,  3,
@@ -68,14 +69,16 @@ void BitPacker::printByte(std::uint8_t byte)
 
 // Pack a value with specified number of bits
 void BitPacker::pack(std::uint64_t value, std::size_t num_bits) {
-    if (num_bits == 0 || num_bits > sizeof(std::uint64_t)*8) {
-        throw std::invalid_argument("BitPacker::pack : num_bits must be between 1 and 64");
-    }
+    #ifndef EGP_NOCHECK
+        if (num_bits == 0 || num_bits > sizeof(std::uint64_t)*8) {
+            throw std::invalid_argument("BitPacker::pack : num_bits must be between 1 and 64");
+        }
 
-    // Ensure value fits in num_bits
-    if (num_bits < sizeof(std::uint64_t)*8 && value >= (std::uint64_t{1} << num_bits)) {
-        throw std::invalid_argument("BitPacker::pack : value too large for specified number of bits");
-    }
+        // Ensure value fits in num_bits
+        if (num_bits < sizeof(std::uint64_t)*8 && value >= (std::uint64_t{1} << num_bits)) {
+            throw std::invalid_argument("BitPacker::pack : value too large for specified number of bits");
+        }
+    #endif
 
     ++packed_values;
 
@@ -86,10 +89,12 @@ void BitPacker::pack(std::uint64_t value, std::size_t num_bits) {
     const std::size_t p_index =  bit_position >> log64; //divide by (8*sizeof(std::uint64_t))
     const std::size_t p_offset = bit_position  & mod64; //mod    by (8*sizeof(std::uint64_t))
 
-    // // Ensure there is enough place, increase size by 50% if not
-    // std::size_t bytes_needed = (bit_position + num_bits + sizeof(std::uint64_t)*8 - 1) / (8*sizeof(std::uint64_t));
-    // if (data.size() < bytes_needed)
-    //     data.resize(std::max(data.size()*3/2, bytes_needed));
+    #ifndef EGP_NOCHECK
+        // Ensure there is enough place, increase size by 50% if not
+        std::size_t bytes_needed = (bit_position + num_bits + sizeof(std::uint64_t)*8 - 1) / (8*sizeof(std::uint64_t));
+        if (data.size() < bytes_needed)
+            data.resize(std::max(data.size()*3/2, bytes_needed));
+    #endif
 
     //Fit in current word
     if(p_offset + num_bits <= siz64)
@@ -112,13 +117,15 @@ void BitPacker::pack(std::uint64_t value, std::size_t num_bits) {
 
 // Unpack a value with specified number of bits
 std::uint64_t BitPacker::unpack(std::size_t start_bit, std::size_t num_bits) const {
-    if (num_bits == 0 || num_bits > sizeof(std::uint64_t)*8) {
-        throw std::invalid_argument("BitPacker::unpack : num_bits must be between 1 and 64");
-    }
+    #ifndef EGP_NOCHECK
+        if (num_bits == 0 || num_bits > sizeof(std::uint64_t)*8) {
+            throw std::invalid_argument("BitPacker::unpack : num_bits must be between 1 and 64");
+        }
 
-    if (start_bit + num_bits > bit_position) {
-        throw std::out_of_range("BitPacker::unpack : attempting to read beyond packed data");
-    }
+        if (start_bit + num_bits > bit_position) {
+            throw std::out_of_range("BitPacker::unpack : attempting to read beyond packed data");
+        }
+    #endif
 
     constexpr unsigned log64 = 6;
     constexpr unsigned mod64 = 63;
@@ -134,7 +141,6 @@ std::uint64_t BitPacker::unpack(std::size_t start_bit, std::size_t num_bits) con
     {
         const unsigned shift = siz64 - num_bits - p_offset;
         const std::uint64_t mask = (std::uint64_t{1} << num_bits) - 1;
-        //std::cout << "FIT n:" << num_bits << " off:" << p_offset  << " " << ((data[p_index] >> shift) & mask) << std::endl;
         return (left >> shift) & mask;
     }
     //Need to split
@@ -145,7 +151,6 @@ std::uint64_t BitPacker::unpack(std::size_t start_bit, std::size_t num_bits) con
         const unsigned shift = p_offset + num_bits - siz64;
         const std::uint64_t mask = (std::uint64_t{1} << (num_bits-shift)) - 1;
         
-        //std::cout << "SPT " << (((data[p_index] & mask) << shift) | (data[p_index+1] >> (siz64 - shift))) << std::endl;
         return ((left & mask) << shift) | (right >> (siz64 - shift));
     }
 }
