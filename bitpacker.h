@@ -47,6 +47,16 @@ protected:
         #endif
     }
 
+    // Swap bytes of a 64-bit integer to little endian
+    static std::uint64_t toLittleEndian64(std::uint64_t val) {
+        #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+            return val;  // Already little endian
+        #else
+            return __builtin_bswap64(val);
+        #endif
+    }
+
+
     static void serialize(const std::string& output_file, const std::vector<std::uint64_t>& data, std::uint64_t bit_position, std::uint64_t packed_values);
 public:
     BitPacker() = default;

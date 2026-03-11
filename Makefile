@@ -15,3 +15,6 @@ test: bitpacker.o elias_gamma_packer.h
 
 bitpacker.o: bitpacker.cpp bitpacker.h
 	g++ ${CPPFLAGS} -c bitpacker.cpp
+
+clean:
+	rm -f bitpacker.o unrle_egp rle_egp

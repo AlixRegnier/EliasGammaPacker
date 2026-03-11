@@ -6,7 +6,7 @@
 #include <vector>
 
 const std::uint8_t BitPacker::tab64[] = {
-    63, 0, 58,  1, 59, 47, 53,  2,
+    63,  0, 58,  1, 59, 47, 53,  2,
     60, 39, 48, 27, 54, 33, 42,  3,
     61, 51, 37, 40, 49, 18, 28, 20,
     55, 30, 34, 11, 43, 14, 22,  4,
@@ -63,6 +63,7 @@ void BitPacker::printByte(std::uint8_t byte)
         else
             std::cout << '0';
     }
+    std::cout << ' ';
 }
 
 // Pack a value with specified number of bits
@@ -90,13 +91,21 @@ void BitPacker::pack(std::uint64_t value, std::size_t num_bits) {
     // if (data.size() < bytes_needed)
     //     data.resize(std::max(data.size()*3/2, bytes_needed));
 
-    //const int shift = (sizeof(std::uint64_t)*8 - num_bits - p_offset);
+    //Fit in current word
+    if(p_offset + num_bits <= siz64)
+    {
+        const unsigned shift = siz64 - p_offset - num_bits;
+        data[p_index] |= value << shift;
+    }
+    //Need to split
+    else
+    {
+        const unsigned shift = p_offset + num_bits - siz64;
 
-    std::uint64_t left  = (value << (siz64 - p_offset - num_bits));
-    std::uint64_t right = (value >> (p_offset + num_bits - siz64));
-
-    data[p_index]     |= left;
-    data[p_index + 1] |= right;
+        const std::uint64_t mask = (std::uint64_t{1} << shift) - 1;
+        data[p_index] |=  value >> shift;
+        data[p_index+1] = (value & mask) << (siz64 - shift);
+    }
 
     bit_position += num_bits;
 }
@@ -115,42 +124,51 @@ std::uint64_t BitPacker::unpack(std::size_t start_bit, std::size_t num_bits) con
     constexpr unsigned mod64 = 63;
     constexpr unsigned siz64 = 8*sizeof(std::uint64_t);
 
-    const std::size_t p_index =  bit_position >> log64; //divide by (8*sizeof(std::uint64_t))
-    const std::size_t p_offset = bit_position  & mod64; //mod    by (8*sizeof(std::uint64_t))
-
-     __uint128_t window =
-        (static_cast<__uint128_t>(data[p_index]) << siz64) |
-        data[p_index + 1];
-
-    std::size_t shift = 2*siz64 - p_offset - num_bits;
-
-    std::uint64_t result = static_cast<std::uint64_t>(window >> shift);
-
-    if (num_bits < siz64)
-        result &= ((std::uint64_t{1} << num_bits) - 1);
+    const std::size_t p_index =  start_bit >> log64; //divide by (8*sizeof(std::uint64_t))
+    const std::size_t p_offset = start_bit  & mod64; //mod    by (8*sizeof(std::uint64_t))
     
-    return result;
+    const std::uint64_t left = toLittleEndian64(data[p_index]);
+
+    //Fit in current word
+    if(p_offset + num_bits <= siz64)
+    {
+        const unsigned shift = siz64 - num_bits - p_offset;
+        const std::uint64_t mask = (std::uint64_t{1} << num_bits) - 1;
+        //std::cout << "FIT n:" << num_bits << " off:" << p_offset  << " " << ((data[p_index] >> shift) & mask) << std::endl;
+        return (left >> shift) & mask;
+    }
+    //Need to split
+    else
+    {
+        const std::uint64_t right = toLittleEndian64(data[p_index+1]);
+
+        const unsigned shift = p_offset + num_bits - siz64;
+        const std::uint64_t mask = (std::uint64_t{1} << (num_bits-shift)) - 1;
+        
+        //std::cout << "SPT " << (((data[p_index] & mask) << shift) | (data[p_index+1] >> (siz64 - shift))) << std::endl;
+        return ((left & mask) << shift) | (right >> (siz64 - shift));
+    }
 }
 
 std::size_t BitPacker::get_next_one_pos(std::size_t starting_bit_pos) const
 {
-    const std::uint8_t * const data8_vec = reinterpret_cast<const std::uint8_t* const>(data.data());
-    const std::size_t data8_size = (bit_position+7)/8;
+    constexpr std::size_t siz64 = sizeof(std::uint64_t)*8;
 
-    const std::uint8_t mask = ~std::uint8_t{0};
+    const std::size_t payload_size = (bit_position + siz64 - 1) / siz64;
+
+    const std::uint64_t mask = ~std::uint64_t{0};
 
     //Mask bits before bit starting position
-    const std::uint8_t masked_byte = data8_vec[starting_bit_pos/8] & (mask >> (starting_bit_pos % 8));
+    const std::uint64_t masked_u64 = data[starting_bit_pos/siz64] & (mask >> (starting_bit_pos % siz64));
 
     //Return first 1 position in masked byte if any + offset
-    if(masked_byte != 0)
-        return 7 - log2_8(masked_byte) + (starting_bit_pos/8*8);
-
+    if(masked_u64 != 0)
+        return siz64 - 1 - log2_64(masked_u64) + (starting_bit_pos/siz64*siz64);
     
-    for(std::size_t i = starting_bit_pos/8+1; i < data8_size; ++i)
+    for(std::size_t i = starting_bit_pos/siz64+1; i < payload_size; ++i)
     {
         if(data[i] != 0)
-            return 7 - log2_8(data8_vec[i]) + i*8;
+            return siz64 - 1 - log2_64(data[i]) + i*siz64;
     }
 
     throw std::runtime_error("BitPacker::get_next_one_pos : Couldn't find any more one from this position");
@@ -160,13 +178,18 @@ void BitPacker::print() const
 {
     const std::uint8_t* const data8_vec = reinterpret_cast<const std::uint8_t* const>(data.data());
     const std::size_t data8_size = (bit_position+7)/8;
-    for(std::size_t i = 0; i < data8_size; ++i)
+    std::size_t i = 0;
+    for(; i < data8_size; ++i)
     {
-        printByte(data8_vec[i]);
+        printByte(data8_vec[7 - (i % 8) + i/8*8]);
         std::cout << ' ';
+
+
+        if(i % 8 == 7 && i + 1 != data8_size)
+            std::cout << std::endl;
     }
 
-    std::cout << std::endl;
+    std::cout << "#" << std::endl;
 }
 
 void BitPacker::serialize(const std::string& output_file) const
@@ -195,7 +218,7 @@ void BitPacker::serialize(const std::string& output_file, const std::vector<std:
     std::size_t i = 0;
     for(; i < payload_size; ++i)
     {
-        const std::uint64_t vBE = toBigEndian64(data[i]);
+        const std::uint64_t vBE = toLittleEndian64(data[i]);
         f.write(reinterpret_cast<const char*>(&vBE), sizeof(std::uint64_t));
     }
 
@@ -233,6 +256,10 @@ void BitPacker::deserialize(const std::string& input_file)
         f.close();
         throw std::runtime_error("BitPacker::deserialize : unexpected file size");
     }
+
+    //Reverse bytes of last integers
+    if(bit_position % sizeof(std::uint64_t)*8 != 0)
+        data.back() = toBigEndian64(data.back());
 
     f.close();
 }
