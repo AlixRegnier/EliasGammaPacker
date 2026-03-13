@@ -199,10 +199,10 @@ void BitPacker::print() const
 
 void BitPacker::serialize(const std::string& output_file) const
 {
-    serialize(output_file, data, bit_position, packed_values);
+    serialize(output_file, data, file_size, bit_position, packed_values);
 }
 
-void BitPacker::serialize(const std::string& output_file, const std::vector<std::uint64_t>& data, std::uint64_t bit_position, std::uint64_t packed_values)
+void BitPacker::serialize(const std::string& output_file, const std::vector<std::uint64_t>& data, std::uint64_t file_size, std::uint64_t bit_position, std::uint64_t packed_values)
 {
     std::ofstream f(output_file, std::ofstream::binary);
 
@@ -211,6 +211,9 @@ void BitPacker::serialize(const std::string& output_file, const std::vector<std:
         f.close();
         throw std::runtime_error("BitPacker::serialize : couldn't open file '" + output_file + "'");
     }
+
+    //Serialize file size
+    f.write(reinterpret_cast<const char*>(&file_size), sizeof(file_size));
 
     //Serialize bit position
     f.write(reinterpret_cast<const char*>(&bit_position), sizeof(bit_position));
@@ -248,6 +251,9 @@ void BitPacker::deserialize(const std::string& input_file)
         throw std::runtime_error("BitPacker::deserialize : couldn't open file '" + input_file + "'");
     }
     
+    //Deserialize file size
+    f.read(reinterpret_cast<char*>(&file_size), sizeof(file_size));
+
     //Deserialize bit position (number of bits)
     f.read(reinterpret_cast<char*>(&bit_position), sizeof(bit_position));
 

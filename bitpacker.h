@@ -33,6 +33,7 @@ protected:
     std::vector<std::uint64_t> data;
     std::uint64_t bit_position{0};  // Current bit position in the data vector
     std::uint64_t packed_values{0}; // Number of times "pack()" as been called
+    std::uint64_t file_size{0};
 
     static const std::uint8_t tab64[64];
     static const std::uint8_t tab8[256];
@@ -58,7 +59,7 @@ protected:
     }
 
 
-    static void serialize(const std::string& output_file, const std::vector<std::uint64_t>& data, std::uint64_t bit_position, std::uint64_t packed_values);
+    static void serialize(const std::string& output_file, const std::vector<std::uint64_t>& data, std::uint64_t file_size, std::uint64_t bit_position, std::uint64_t packed_values);
 public:
     BitPacker() = default;
     virtual ~BitPacker();
@@ -72,7 +73,6 @@ public:
     // Get position of next bit set to one from a starting position
     std::size_t get_next_one_pos(std::size_t starting_bit_pos) const;
 
-    
     virtual void serialize(const std::string& output_file) const;
 
     virtual void deserialize(const std::string& input_file);
@@ -91,6 +91,11 @@ public:
         data.resize(new_size);
     }
 
+    void set_file_size(std::uint64_t new_file_size)
+    {
+        file_size = new_file_size;
+    }
+
     // Get the number of bits packed
     std::uint64_t get_bit_count() const
     {
@@ -106,7 +111,12 @@ public:
     // Get the number of bytes used (rounded up)
     std::size_t get_byte_count() const
     {
-        return data.size();
+        return data.size()*sizeof(std::uint64_t);
+    }
+
+    std::uint64_t get_file_size() const
+    {
+        return file_size;
     }
 
     // Clear all data

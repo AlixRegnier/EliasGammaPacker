@@ -46,7 +46,7 @@ public:
         std::uint64_t packed_values_and_first_bit = packed_values << 1 | first_bit;
 
         //Serialize
-        BitPacker::serialize(output_file, data, bit_position, packed_values_and_first_bit);
+        BitPacker::serialize(output_file, data, file_size, bit_position, packed_values_and_first_bit);
     }
 
     void deserialize(const std::string& input_file) override
