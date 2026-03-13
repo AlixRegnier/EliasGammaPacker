@@ -1,14 +1,10 @@
 #include <iostream>
 #include <sys/mman.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <immintrin.h>
 #include <cstdint>
 #include <string>
 #include "elias_gamma_packer.h"
-
-#include <array>
 
 struct Entry
 {
