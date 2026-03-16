@@ -12,7 +12,6 @@
 
 #include "elias_gamma_packer.h"
 
-
 int main(int argc, char ** args) {
 
     if(argc != 3)
@@ -21,116 +20,139 @@ int main(int argc, char ** args) {
         return 1;
     }
 
-    std::string input = args[1];
-    std::string output = args[2];
+    std::string input_filename = args[1];
+    std::string output_filename = args[2];
 
     EliasGammaPacker egp;
-    egp.deserialize(input);
+    egp.deserialize(input_filename);
 
-    std::ofstream f(output, std::ofstream::binary);
+    const std::uint64_t file_size = egp.get_file_size();
 
-    constexpr size_t BUFFER_SIZE = 1 << 23; // 8MB
-    std::vector<uint8_t> buffer(BUFFER_SIZE);
-    size_t buffer_pos = 0;
+    int fd = open(output_filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0644);
 
-    auto flush_buffer = [&]() {
-        f.write(reinterpret_cast<char*>(buffer.data()), buffer_pos);
-        buffer_pos = 0;
-    };
+    if (fd == -1)
+    {
+        std::cerr << "main : couldn't open file '" << input_filename << "' (" << strerror(errno) << ')' << std::endl;
+        return 2;
+    }
 
-    auto write_byte = [&](uint8_t byte) {
-        if (buffer_pos >= BUFFER_SIZE)
-            flush_buffer();
+    if (ftruncate(fd, file_size) == -1) {
+        std::cerr << "main : file resizing failed (" << strerror(errno) << ')' << std::endl;
+        return 2;
+    }
 
-        buffer[buffer_pos++] = byte;
-    };
+    char* map = (char*)mmap(nullptr, file_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
-    uint8_t current_byte = 0;
-    int bit_pos = 7;              // MSB-first
-    std::uint64_t run_length;
-	std::uint64_t i = 0;
-	std::uint64_t packed_values = egp.get_packed_values_count();
-    bool bit_value = egp.get_first_bit();
+    if (map == MAP_FAILED) {
+        std::cerr << "main : mmap initialization failed (" << strerror(errno) << ')' << std::endl;
+        return 2;
+    }
 
-	while(i++ < packed_values)
-	{
-		run_length = egp.unpack();
+    posix_madvise(map, file_size, MADV_SEQUENTIAL);
 
-		// Handle unaligned partial byte first
-		while (run_length > 0 && bit_pos != 7)
-		{
-			if (bit_value)
-				current_byte |= (1u << bit_pos);
+    const std::uint64_t nb_packed_values = egp.get_packed_values_count();
+    std::uint64_t bit_pos = 0;
+    std::uint64_t run_length = 0;
+    
+    std::uint64_t i = 0;
+    
+    if(!egp.get_first_bit() && nb_packed_values > 0)
+    {
+        bit_pos = egp.unpack(); //Unpack first run of 0s
+        i = 1;
+    }
 
-			bit_pos--;
-			run_length--;
+    const std::uint8_t FF = 0xFF;
 
-			if (bit_pos < 0)
-			{
-				write_byte(current_byte);
-				current_byte = 0;
-				bit_pos = 7;
-			}
-		}
+    for(; i+1 < nb_packed_values; i += 2)
+    {
+        run_length = egp.unpack(); //Get first bit run of 1s
 
-		// Now we are byte-aligned
-		if (run_length >= 8)
-		{
-			uint8_t fill_byte = bit_value ? 0xFF : 0x00;
+        // Handle first unaligned partial byte if any
+        if(bit_pos % 8 != 0)
+        {   
+            if(run_length + (bit_pos % 8) < 8)
+            {
+                //Update first unaligned partial byte
+                map[bit_pos/8] |= (((std::uint8_t{1}) << run_length) - 1) << (8 - (bit_pos % 8) - run_length);
 
-			// Number of full bytes
-			uint64_t full_bytes = run_length / 8;
-			run_length %= 8;
+                //Update bit position to next byte
+                bit_pos += run_length;
 
-			// Emit 32-byte AVX blocks
-			__m256i vec = _mm256_set1_epi8(static_cast<char>(fill_byte));
+                //Update run-length
+                run_length = 0;
 
-			while (full_bytes >= 32)
-			{
-				if (buffer_pos + 32 > BUFFER_SIZE)
-					flush_buffer();
+            }
+            else
+            {
+                //Update first unaligned partial byte
+                map[bit_pos/8] |= FF >> (bit_pos % 8);
+                
+                //Update run-length
+                run_length -= 8 - (bit_pos % 8);
 
-				_mm256_storeu_si256(
-					reinterpret_cast<__m256i*>(buffer.data() + buffer_pos),
-					vec);
+                //Update bit position to next byte
+                bit_pos = bit_pos/8*8 + 8;
+            }
+        }
 
-				buffer_pos += 32;
-				full_bytes -= 32;
-			}
+        // Handle aligned bytes 
+        for(std::uint64_t j = 0; j < run_length / 8; ++j, bit_pos += 8)
+            map[bit_pos/8] = FF;
 
-			// Emit remaining full bytes
-			while (full_bytes--)
-				write_byte(fill_byte);
-		}
+        // Handle last unaligned partial byte if any
+        if(run_length % 8 != 0)
+            map[bit_pos/8] = FF << (8 - run_length % 8);
 
-		// Handle tail bits (< 8)
-		while (run_length > 0)
-		{
-			if (bit_value)
-				current_byte |= (1u << bit_pos);
+        //Update current bit position by the previously number of added 1s and add also the of next 0s
+        bit_pos += (run_length % 8) + egp.unpack();
+    }
 
-			bit_pos--;
-			run_length--;
+    //Handle last run of 1s 
+    if(egp.get_first_bit() == nb_packed_values % 2)
+    {
+        run_length = egp.unpack(); //Get first bit run of 1s
+            
+        // Handle first unaligned partial byte if any
+        if(bit_pos % 8 != 0)
+        {   
+            if(run_length + (bit_pos % 8) < 8)
+            {
+                //Update first unaligned partial byte
+                map[bit_pos/8] |= (((std::uint8_t{1}) << run_length) - 1) << (8 - (bit_pos % 8) - run_length);
 
-			if (bit_pos < 0)
-			{
-				write_byte(current_byte);
-				current_byte = 0;
-				bit_pos = 7;
-			}
-		}
+                //Update bit position to next byte
+                bit_pos += run_length;
 
-		bit_value = !bit_value;
-	}
+                //Update run-length
+                run_length = 0;
+            }
+            else
+            {
+                //Update first unaligned partial byte
+                map[bit_pos/8] |= FF >> (bit_pos % 8);
+                
+                //Update run-length
+                run_length -= 8 - (bit_pos % 8);
 
-    // Flush partial byte
-    if (bit_pos != 7)
-        write_byte(current_byte);
+                //Update bit position to next byte
+                bit_pos = bit_pos/8*8 + 8;
+            }
+        }
+        
+        // Handle aligned bytes 
+        for(std::uint64_t j = 0; j < run_length / 8; ++j, bit_pos += 8)
+            map[bit_pos/8] = FF;
 
-    // Flush remaining buffer
-    if (buffer_pos)
-        flush_buffer();
+        // Handle last unaligned partial byte if any
+        if(run_length % 8 != 0)
+            map[bit_pos/8] = FF << (8 - run_length % 8);
 
-    f.close();
+        //bit_pos += run_length + egp.unpack(); //Update current bit position by the previously number of added 1s and add also the of next 0s
+    }
+    
+    munmap(map, file_size);
+    close(fd);
+
     return 0;
 }

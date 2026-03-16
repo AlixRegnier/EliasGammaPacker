@@ -339,7 +339,8 @@ int main(int argc, char ** args) {
 
     egp.set_first_bit(previous_bit);
     egp.resize(1 << 26); //Set initial vector of bytes to 64MB
-
+    egp.set_file_size(file_size);
+    
     // Process each bits
     for (; i < file_size; ++i) {
         dispatch(egp, data[i], run_length);
