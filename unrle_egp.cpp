@@ -12,18 +12,6 @@
 
 #include "elias_gamma_packer.h"
 
-void printByte(std::uint8_t byte)
-{
-    for(int i = 0; i < 8; ++i)
-    {
-        if(byte >> (7-i) & std::uint8_t{1})
-            std::cout << '1';
-        else
-            std::cout << '0';
-    }
-    std::cout << ' ';
-}
-
 int main(int argc, char ** args) {
 
     if(argc != 3)
@@ -40,7 +28,7 @@ int main(int argc, char ** args) {
 
     const std::uint64_t file_size = egp.get_file_size();
 
-    int fd = open(output_filename.c_str(), O_RDWR | O_CREAT, 0644);
+    int fd = open(output_filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0644);
 
     if (fd == -1)
     {
@@ -74,19 +62,11 @@ int main(int argc, char ** args) {
         i = 1;
     }
 
-    //Ensure filled with 0s
-    for(std::uint64_t j = 0; j < file_size; ++j)
-    {
-        map[j] = '\0';
-    }
-
     const std::uint8_t FF = 0xFF;
 
     for(; i+1 < nb_packed_values; i += 2)
     {
         run_length = egp.unpack(); //Get first bit run of 1s
-
-        //std::cout << "r: " << run_length << " b: " << bit_pos << std::endl;
 
         // Handle first unaligned partial byte if any
         if(bit_pos % 8 != 0)
@@ -124,8 +104,8 @@ int main(int argc, char ** args) {
         if(run_length % 8 != 0)
             map[bit_pos/8] = FF << (8 - run_length % 8);
 
-        std::uint64_t p = egp.unpack();
-        bit_pos += (run_length % 8) + p; //Update current bit position by the previously number of added 1s and add also the of next 0s
+        //Update current bit position by the previously number of added 1s and add also the of next 0s
+        bit_pos += (run_length % 8) + egp.unpack();
     }
 
     //Handle last run of 1s 
