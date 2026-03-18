@@ -16,6 +16,8 @@ private:
 public:
     EliasGammaPacker() = default;
 
+    using BitPacker::pack;
+
     void pack(std::uint64_t value)
     {
         BitPacker::pack(value, elias_delta_bit_length(value));
