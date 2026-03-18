@@ -91,6 +91,7 @@ public:
         data.resize(new_size);
     }
 
+
     void set_file_size(std::uint64_t new_file_size)
     {
         file_size = new_file_size;
@@ -106,6 +107,11 @@ public:
     std::uint64_t get_packed_values_count() const
     {
         return packed_values;
+    }
+
+    void set_packed_values_count(std::uint64_t new_packed_values)
+    {
+        packed_values = new_packed_values;
     }
 
     // Get the number of bytes used (rounded up)
