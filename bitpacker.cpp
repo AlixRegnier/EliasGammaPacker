@@ -91,7 +91,7 @@ void BitPacker::pack(std::uint64_t value, std::size_t num_bits) {
 
     #ifndef EGP_NOCHECK
         // Ensure there is enough place, increase size by 50% if not
-        std::size_t bytes_needed = (bit_position + num_bits + sizeof(std::uint64_t)*8 - 1) / (8*sizeof(std::uint64_t));
+        std::size_t bytes_needed = (bit_position + num_bits + siz64 - 1) / siz64;
         if (data.size() < bytes_needed)
             data.resize(std::max(data.size()*3/2, bytes_needed));
     #endif

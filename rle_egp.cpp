@@ -6,7 +6,9 @@
 #include <string>
 #include "elias_gamma_packer.h"
 
-#if !defined(COMPUTED_GOTO) && (defined(__GNUC__) || defined(__clang__))
+
+//Computed goto if on compiler supporting label addressing through variables
+#if !defined(NO_COMPUTED_GOTO) && (defined(__GNUC__) || defined(__clang__))
     #define COMPUTED_GOTO
 #endif
 
@@ -32,6 +34,7 @@ void BitRunDFA(EliasGammaPacker& egp, const std::uint8_t* const input, std::size
     };
     #endif
 
+    //Loop sequentially on each input bytes
     while(pos < length)
     {
         byte = input[pos++];
