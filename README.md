@@ -13,9 +13,9 @@ Don't compress any sensible file without any backup.
 
 ## Compilation
 
-There are two compilation flag that can be used:
-``-DNO_COMPUTED_GOTO`` to use a switch instead of computed goto.
-``-DEGP_NOCHECK`` to remove boundary checks (implies that bitpacking vector size is enough) because no checks will be done.
+There are two compilation flags that can be used (to put in Makefile):  
+``-DNO_COMPUTED_GOTO`` to use a switch instead of computed goto.  
+``-DEGP_NOCHECK`` to remove boundary checks (implies that bitpacking vector size is enough) because no checks will be done.  
 
 ```bash
 make
