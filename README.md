@@ -35,7 +35,8 @@ Decompression
 ```
 
 ## File format
-File format remains "simple".
+File format remains "simple".  
+  
 **HEADER**
 ```
 +-------------------------------------------------------------+
