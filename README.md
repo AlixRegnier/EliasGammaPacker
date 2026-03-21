@@ -47,7 +47,7 @@ File format remains "simple".
 | number of packed values (63 bits) | first bit value (1 bit) |
 +-----------------------------------+-------------------------+
 ```
-**PAYLOAD** (concatenated Elias-$\gamma$ words)
+**PAYLOAD** (concatenated Elias-&gamma; words)
 ```
 +-------------------------------------------------------------+
 |       little endian payload (bit position / 64 bytes)       |
