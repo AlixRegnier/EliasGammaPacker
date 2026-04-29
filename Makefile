@@ -1,4 +1,4 @@
-CPPFLAGS=-O3 -std=c++17 -march=native -mavx2 -pedantic -Wall #-DEGP_NOCHECK
+CPPFLAGS=-O3 -std=c++11 -march=native -mavx2 -Wall #-DEGP_NOCHECK
 
 all: rle_egp unrle_egp
 
