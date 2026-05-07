@@ -1,36 +1,133 @@
 #ifndef EGPRLE_H
 #define EGPRLE_H
-#include "compress_integer_elias_gamma_simd.h"
 #include <cstdlib>
 #include <cstdint>
 #include <cstring>
 #include <stdexcept>
+#include <vector>
+#include <cstdlib>
 
-typedef JASS::compress_integer::integer UINT;
+typedef std::uint32_t run_length_type;
+
+template<typename N, std::size_t size>
+class DoubleCircularBuffer
+{
+    private:
+        N* buffer;
+        std::size_t offset;
+        std::size_t get_offset;
+    public:
+        DoubleCircularBuffer()
+        {
+            this->buffer = new N[size*2];
+            clear();
+        }
+
+        DoubleCircularBuffer(const DoubleCircularBuffer<N,size>& other) noexcept
+        {
+            if(this != &other)
+            {
+                std::memcpy(this->buffer, other.buffer, sizeof(other.buffer));
+                this->offset = other.offset;
+                this->get_offset = other.get_offset;
+            }
+        }
+
+        DoubleCircularBuffer(DoubleCircularBuffer<N,size>&& other) noexcept
+            : buffer(other.buffer), offset(other.offset), get_offset(other.get_offset)
+        {
+            other.buffer = nullptr;
+        }
+
+        DoubleCircularBuffer<N, size>& operator=(DoubleCircularBuffer<N, size>&& other) noexcept {
+            if (this != &other) 
+            {
+                delete[] buffer;
+
+                this->buffer = other.buffer;
+                this->offset = other.offset;
+                this->get_offset = other.get_offset;
+                std::memcpy(this->buffer, other.buffer, sizeof(other.buffer));
+
+                other.buffer = nullptr;
+            }
+
+            return *this;
+        }
+
+        DoubleCircularBuffer<N, size>& operator=(const DoubleCircularBuffer<N, size>& other)
+        {
+            if(this != &other)
+            {
+                std::memcpy(this->buffer, other.buffer, sizeof(other.buffer));
+                this->offset = other.offset;
+                this->get_offset = other.get_offset;
+            }
+
+            return *this;
+        }
+
+        void clear()
+        {
+            this->offset = 0;
+            this->get_offset = 0;
+        }
+
+        virtual ~DoubleCircularBuffer()
+        {
+            if(buffer != nullptr)
+                delete[] buffer;
+            buffer = nullptr;
+        }
+    
+        void push(const N& value)
+        {
+            buffer[offset++] = value;
+            offset %= size;
+        }
+
+        const N* ptr() const
+        {
+            return buffer + get_offset;
+        }
+
+        std::size_t size() const
+        {
+            return size;
+        }
+
+        void cycle()
+        {
+            get_offset ^= size;
+        }
+};
 
 namespace EliasGammaPacker
 {
     class EGPRLE
     {
         private:
-            JASS::compress_integer_elias_gamma_simd compressor;
-            std::vector<UINT> integers;
+            std::size_t dfa_pos;
+            run_length_type dfa_run_length;
+            std::uint8_t dfa_state;
+            DoubleCircularBuffer<run_length_type, 16> buffer;
         public:
-            EGPRLE(std::size_t expected_size)
-            { 
-                integers.resize(compressBound(expected_size));
-            }
 
             //RLE compression, can be worse than uncompressed data. But in case of RLE non-compressible data, data is stored uncompressed (TODO TO BE DONE)
-            static std::size_t forceinline compressBound(std::size_t data_size)
+            //WARNING: tard-implemented
+            static std::size_t compressBound(std::size_t data_size)
             {
-                return data_size+sizeof(UINT);
+                return 2*data_size;
             }
 
             void BitRunDFA(const std::uint8_t * const data, std::size_t length);
 
-            std::size_t forceinline encode(char* dst, std::size_t dst_size, const char* src, std::size_t src_size)
+            void std::size_t inline encode(char* dst, std::size_t dst_size, const char* src, std::size_t src_size)
             {
+                dfa_pos = 0;
+                dfa_run_length = 0;
+                buffer.clear();
+
                 //Get integers to compress (TODO: yield them (coroutine ??), for avoiding having all integers in memory)
                 BitRunDFA(reinterpret_cast<const std::uint8_t*>(src), src_size);
 
@@ -41,7 +138,7 @@ namespace EliasGammaPacker
                         std::memcpy(dst, src, src_size);*/
             }
 
-            std::size_t forceinline decode(char* dst, std::size_t dst_size, const char* src, std::size_t src_size)
+            static std::size_t forceinline decode(char* dst, std::size_t dst_size, const char* src, std::size_t src_size)
             {
                 std::size_t bit_pos = 0;
                 std::size_t run_length = 0;
