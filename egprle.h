@@ -8,22 +8,23 @@
 #include <cstdlib>
 
 typedef std::uint32_t run_length_type;
+#define NB_RUNS 16
 
 template<typename N, std::size_t size>
-class DoubleCircularBuffer
+class CircularDoubleBuffer
 {
     private:
         N* buffer;
         std::size_t offset;
         std::size_t get_offset;
     public:
-        DoubleCircularBuffer()
+        CircularDoubleBuffer()
         {
             this->buffer = new N[size*2];
             clear();
         }
 
-        DoubleCircularBuffer(const DoubleCircularBuffer<N,size>& other) noexcept
+        CircularDoubleBuffer(const CircularDoubleBuffer<N,size>& other) noexcept
         {
             if(this != &other)
             {
@@ -33,13 +34,13 @@ class DoubleCircularBuffer
             }
         }
 
-        DoubleCircularBuffer(DoubleCircularBuffer<N,size>&& other) noexcept
+        CircularDoubleBuffer(CircularDoubleBuffer<N,size>&& other) noexcept
             : buffer(other.buffer), offset(other.offset), get_offset(other.get_offset)
         {
             other.buffer = nullptr;
         }
 
-        DoubleCircularBuffer<N, size>& operator=(DoubleCircularBuffer<N, size>&& other) noexcept {
+        CircularDoubleBuffer<N, size>& operator=(CircularDoubleBuffer<N, size>&& other) noexcept {
             if (this != &other) 
             {
                 delete[] buffer;
@@ -55,7 +56,7 @@ class DoubleCircularBuffer
             return *this;
         }
 
-        DoubleCircularBuffer<N, size>& operator=(const DoubleCircularBuffer<N, size>& other)
+        CircularDoubleBuffer<N, size>& operator=(const CircularDoubleBuffer<N, size>& other)
         {
             if(this != &other)
             {
@@ -73,7 +74,7 @@ class DoubleCircularBuffer
             this->get_offset = 0;
         }
 
-        virtual ~DoubleCircularBuffer()
+        virtual ~CircularDoubleBuffer()
         {
             if(buffer != nullptr)
                 delete[] buffer;
@@ -83,7 +84,7 @@ class DoubleCircularBuffer
         void push(const N& value)
         {
             buffer[offset++] = value;
-            offset %= size;
+            offset %= size*2;
         }
 
         const N* ptr() const
@@ -91,9 +92,14 @@ class DoubleCircularBuffer
             return buffer + get_offset;
         }
 
-        std::size_t size() const
+        std::size_t buffer_size() const
         {
             return size;
+        }
+
+        std::size_t size() const
+        {
+            return (offset % size) + 1;
         }
 
         void cycle()
@@ -110,7 +116,7 @@ namespace EliasGammaPacker
             std::size_t dfa_pos;
             run_length_type dfa_run_length;
             std::uint8_t dfa_state;
-            DoubleCircularBuffer<run_length_type, 16> buffer;
+            CircularDoubleBuffer<run_length_type, NB_RUNS> buffer;
         public:
 
             //RLE compression, can be worse than uncompressed data. But in case of RLE non-compressible data, data is stored uncompressed (TODO TO BE DONE)
@@ -128,14 +134,19 @@ namespace EliasGammaPacker
                 dfa_run_length = 0;
                 buffer.clear();
 
-                //Get integers to compress (TODO: yield them (coroutine ??), for avoiding having all integers in memory)
-                BitRunDFA(reinterpret_cast<const std::uint8_t*>(src), src_size);
+                do
+                {
+                    BitRunDFA(reinterpret_cast<const std::uint8_t*>(src), src_size);
 
-                integers.clear();
-                return compressor.encode(dst, dst_size, integers.data(), integers.size());
-                /*        throw std::runtime_error("ERROR EGPRLE::encode: destination memory is not big enough.");
-                    else
-                        std::memcpy(dst, src, src_size);*/
+                    //Process 16 integers
+                    //SIMD code Group Elias Gamma here 2x AVX2 (16x32)
+
+                    //Prepare next
+                    buffer.cycle();
+                }
+                while(buffer.size() == NB_RUNS && dfa_pos < src_size);
+
+               //Handle last runs
             }
 
             static std::size_t forceinline decode(char* dst, std::size_t dst_size, const char* src, std::size_t src_size)
@@ -143,8 +154,6 @@ namespace EliasGammaPacker
                 std::size_t bit_pos = 0;
                 std::size_t run_length = 0;
                 
-                integers.clear();
-                compressor.decode(integers.data(), src, src_size);
 
                 //Loop to decompress 
                 if(!egp.get_first_bit() && nb_packed_values > 0)

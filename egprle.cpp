@@ -33,8 +33,10 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length) {
     //Loop sequentially on each input bytes
     while(dfa_pos < length)
     {
-        //Return here when >16 were added
-        
+        //Return here when >= 16 run lengths were pushed
+        if(buffer.size() == 16)
+            return;
+
         byte = input[dfa_pos++];
 
     #ifdef COMPUTED_GOTO
