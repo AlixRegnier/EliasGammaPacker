@@ -1,122 +1,35 @@
 #ifndef EGPRLE_H
 #define EGPRLE_H
+
 #include <cstdlib>
 #include <cstdint>
 #include <cstring>
 #include <stdexcept>
 #include <vector>
 #include <cstdlib>
+#include <immintrin.h>
+#include <emmintrin.h>
 
-typedef std::uint32_t run_length_type;
+#include "utils.h"
+#include "circular_buffer.h"
+
+typedef std::uint32_t run_length_t;
 #define NB_RUNS 16
 
-template<typename N, std::size_t size>
-class CircularDoubleBuffer
-{
-    private:
-        N* buffer;
-        std::size_t offset;
-        std::size_t get_offset;
-    public:
-        CircularDoubleBuffer()
-        {
-            this->buffer = new N[size*2];
-            clear();
-        }
-
-        CircularDoubleBuffer(const CircularDoubleBuffer<N,size>& other) noexcept
-        {
-            if(this != &other)
-            {
-                std::memcpy(this->buffer, other.buffer, sizeof(other.buffer));
-                this->offset = other.offset;
-                this->get_offset = other.get_offset;
-            }
-        }
-
-        CircularDoubleBuffer(CircularDoubleBuffer<N,size>&& other) noexcept
-            : buffer(other.buffer), offset(other.offset), get_offset(other.get_offset)
-        {
-            other.buffer = nullptr;
-        }
-
-        CircularDoubleBuffer<N, size>& operator=(CircularDoubleBuffer<N, size>&& other) noexcept {
-            if (this != &other) 
-            {
-                delete[] buffer;
-
-                this->buffer = other.buffer;
-                this->offset = other.offset;
-                this->get_offset = other.get_offset;
-                std::memcpy(this->buffer, other.buffer, sizeof(other.buffer));
-
-                other.buffer = nullptr;
-            }
-
-            return *this;
-        }
-
-        CircularDoubleBuffer<N, size>& operator=(const CircularDoubleBuffer<N, size>& other)
-        {
-            if(this != &other)
-            {
-                std::memcpy(this->buffer, other.buffer, sizeof(other.buffer));
-                this->offset = other.offset;
-                this->get_offset = other.get_offset;
-            }
-
-            return *this;
-        }
-
-        void clear()
-        {
-            this->offset = 0;
-            this->get_offset = 0;
-        }
-
-        virtual ~CircularDoubleBuffer()
-        {
-            if(buffer != nullptr)
-                delete[] buffer;
-            buffer = nullptr;
-        }
-    
-        void push(const N& value)
-        {
-            buffer[offset++] = value;
-            offset %= size*2;
-        }
-
-        const N* ptr() const
-        {
-            return buffer + get_offset;
-        }
-
-        std::size_t buffer_size() const
-        {
-            return size;
-        }
-
-        std::size_t size() const
-        {
-            return (offset % size) + 1;
-        }
-
-        void cycle()
-        {
-            get_offset ^= size;
-        }
-};
+#include <iostream>
 
 namespace EliasGammaPacker
 {
     class EGPRLE
     {
         private:
+            //Bit-run DFA
             std::size_t dfa_pos;
-            run_length_type dfa_run_length;
+            run_length_t dfa_run_length;
             std::uint8_t dfa_state;
-            CircularDoubleBuffer<run_length_type, NB_RUNS> buffer;
+
+            //Run-length buffer
+            CircularDoubleBuffer<run_length_t, NB_RUNS> buffer;
         public:
 
             //RLE compression, can be worse than uncompressed data. But in case of RLE non-compressible data, data is stored uncompressed (TODO TO BE DONE)
@@ -128,8 +41,34 @@ namespace EliasGammaPacker
 
             void BitRunDFA(const std::uint8_t * const data, std::size_t length);
 
-            void std::size_t inline encode(char* dst, std::size_t dst_size, const char* src, std::size_t src_size)
+            //dst must be 32-byte aligned (e.g. alignas(32))
+            std::size_t encode(char* dst, std::size_t dst_size, const char* src, std::size_t src_size)
             {
+                if(reinterpret_cast<std::uintptr_t>(dst) % 32 != 0)
+                    throw std::runtime_error("egprle :: encode : destination is not 32-byte aligned.");
+
+                std::uint8_t* dst_pos = reinterpret_cast<std::uint8_t*>(dst);
+                std::uint8_t* const dst_end = dst_pos + dst_size;
+
+                //Zero destination
+                std::memset(dst, 0, dst_size);
+
+                constexpr int lane_width = 256;
+                constexpr int lane_nb = 2;
+                constexpr int sublane_width = lane_width * lane_nb / NB_RUNS;
+                constexpr int selector_width = sublane_width;
+                constexpr int POFFSET = lane_width / sublane_width;
+
+                using selector_t = compile_time_uint_t<selector_width>;
+                typedef union { __m256i v; std::uint8_t bytes[lane_width/8]; } payload_t;
+
+                selector_t* selector = reinterpret_cast<selector_t*>(dst_pos);
+                payload_t* payload1 = reinterpret_cast<payload_t*>(dst_pos + sizeof(selector_t));
+                payload_t* payload2 = reinterpret_cast<payload_t*>(dst_pos + sizeof(selector_t) + sizeof(payload_t));
+
+                int remaining_bits = sublane_width;
+                std::size_t offset = 0;
+
                 dfa_pos = 0;
                 dfa_run_length = 0;
                 buffer.clear();
@@ -138,20 +77,94 @@ namespace EliasGammaPacker
                 {
                     BitRunDFA(reinterpret_cast<const std::uint8_t*>(src), src_size);
 
+                    const __m256i values1 = _mm256_load_si256((const __m256i*)buffer.ptr());
+                    const __m256i values2 = _mm256_load_si256((const __m256i*)(buffer.ptr()+POFFSET));
+
                     //Process 16 integers
                     //SIMD code Group Elias Gamma here 2x AVX2 (16x32)
 
-                    //Prepare next
+                    std::uint8_t frame_width = 0;
+                    
+                    //Get width (log2+1) of 16 integers
+                    {
+                        run_length_t merge = run_length_t{1};
+                        
+                        int i = 0;
+                        for(; i < NB_RUNS; ++i)
+                            merge |= buffer[i]; //Possible to vectorize here
+
+                        frame_width = log2_64(merge)+1;
+                    }
+
+                    //Enough space
+                    if(frame_width <= remaining_bits)
+                    {
+                        //Update selector
+                        *selector |= unary<selector_t>(frame_width-1) << offset;
+
+                        payload1->v = _mm256_or_si256(_mm256_slli_epi32(values1, offset), payload1->v);
+                        payload2->v = _mm256_or_si256(_mm256_slli_epi32(values2, offset), payload2->v);
+
+                        offset += frame_width;
+                        remaining_bits -= frame_width;
+                    }
+                    //Need to split/move to next lane
+                    else 
+                    {
+                        int split_frame_width = frame_width - remaining_bits;
+
+                        if(remaining_bits != 0)
+                        {
+                            const __m256i split1_mask = _mm256_load_si256((const __m256i*)mask_lsb_not[split_frame_width]);
+            
+                            //Selector low bits go to current split (split1) - nothing to do
+
+                            //Frame high bits go to current split (split1)
+                            int shift = sublane_width - frame_width;
+                            payload1->v = _mm256_or_si256(_mm256_slli_epi32(_mm256_and_si256(values1, split1_mask), shift), payload1->v);
+                            payload2->v = _mm256_or_si256(_mm256_slli_epi32(_mm256_and_si256(values2, split1_mask), shift), payload2->v);
+                        }
+
+                        //Check memory out of range
+                        dst_pos += sizeof(selector_t) + 2 * sizeof(payload_t);
+                        if(dst_pos + sizeof(selector_t) + 2*sizeof(payload_t) >= dst_end)
+                            throw std::runtime_error("egprle :: encode : Out of range");
+
+                        //Update pointers
+                        selector = reinterpret_cast<selector_t*>(dst_pos);
+                        payload1 = reinterpret_cast<payload_t*>(dst_pos + sizeof(selector_t));
+                        payload2 = reinterpret_cast<payload_t*>(dst_pos + sizeof(selector_t) + sizeof(payload_t));
+
+                        //Selector high bits go to next split (split2)
+                        *selector |= unary<selector_t>(split_frame_width-1);
+
+                        const __m256i split2_mask = _mm256_load_si256((const __m256i*)mask_lsb[split_frame_width]);
+                        
+                        //Frame low bits go to next split (split2)
+                        payload1->v = _mm256_and_si256(values1, split2_mask);
+                        payload2->v = _mm256_and_si256(values2, split2_mask);
+
+                        //Reset offset and remaining_bits variables
+                        offset = split_frame_width;
+                        remaining_bits = sublane_width - split_frame_width;
+                    }
+
+                    //Cycle buffer offset
                     buffer.cycle();
                 }
-                while(buffer.size() == NB_RUNS && dfa_pos < src_size);
+                while(dfa_pos < src_size);
 
-               //Handle last runs
+                return //relative position + selector size + 2*payload size
+                 + reinterpret_cast<const char*>(dst_pos)
+                 - reinterpret_cast<const char*>(dst)
+                 + sizeof(selector_t)
+                 + sizeof(payload_t)
+                 + sizeof(payload_t);
             }
 
-            static std::size_t forceinline decode(char* dst, std::size_t dst_size, const char* src, std::size_t src_size)
+            std::size_t decode(char* dst, std::size_t dst_size, const char* src, std::size_t src_size)
             {
-                std::size_t bit_pos = 0;
+                /*std::size_t bit_pos = 0;
                 std::size_t run_length = 0;
                 
 
@@ -249,7 +262,9 @@ namespace EliasGammaPacker
                         map[bit_pos/8] = FF << (8 - run_length % 8);
 
                     //bit_pos += run_length + egp.unpack(); //Update current bit position by the previously number of added 1s and add also the of next 0s
-                }
+                }*/
+
+                return 0;
             }
 
 
