@@ -1,4 +1,4 @@
-CPPFLAGS=-O3 -std=c++11 -march=native -mavx2 -Wall #-DEGP_NOCHECK
+CPPFLAGS=-O3 -std=c++14 -march=native -mavx2 -Wall #-DEGP_NOCHECK
 
 all: rle_egp unrle_egp
 
@@ -16,5 +16,7 @@ test: bitpacker.o elias_gamma_packer.h
 bitpacker.o: bitpacker.cpp bitpacker.h
 	g++ ${CPPFLAGS} -c bitpacker.cpp
 
+simd: egprle.h egprle.cpp circular_buffer.h
+	g++ ${CPPFLAGS} -o simd_egp egprle.cpp
 clean:
 	rm -f bitpacker.o unrle_egp rle_egp
