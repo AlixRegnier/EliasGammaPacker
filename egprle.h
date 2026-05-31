@@ -20,13 +20,22 @@ typedef std::uint32_t run_length_t;
 
 namespace EliasGammaPacker
 {
+    static const int lane_width = 256;
+    static const int lane_nb = 2;
+    static const int sublane_width = lane_width * lane_nb / NB_RUNS;
+    static const int selector_width = sublane_width;
+    static const int values_offset = lane_width / sublane_width;
+
+    using selector_t = compile_time_uint_t<selector_width>; //Must be 32-byte aligned
+    using payload_t = union { __m256i v; std::uint8_t bytes[lane_width/8]; };
+
     class EGPRLE
     {
         private:
             //Bit-run DFA
             std::size_t dfa_pos;
             run_length_t dfa_run_length;
-            std::uint8_t dfa_state;
+            std::uint8_t dfa_state;         
 
             //Run-length buffer
             CircularDoubleBuffer<run_length_t, NB_RUNS> buffer;
@@ -53,21 +62,14 @@ namespace EliasGammaPacker
                 //Zero destination
                 std::memset(dst, 0, dst_size);
 
-                constexpr int lane_width = 256;
-                constexpr int lane_nb = 2;
-                constexpr int sublane_width = lane_width * lane_nb / NB_RUNS;
-                constexpr int selector_width = sublane_width;
-                constexpr int POFFSET = lane_width / sublane_width;
-
-                using selector_t = compile_time_uint_t<selector_width>;
-                typedef union { __m256i v; std::uint8_t bytes[lane_width/8]; } payload_t;
-
+                //Need 32-byte alignment
                 selector_t* selector = reinterpret_cast<selector_t*>(dst_pos);
                 payload_t* payload1 = reinterpret_cast<payload_t*>(dst_pos + sizeof(selector_t));
                 payload_t* payload2 = reinterpret_cast<payload_t*>(dst_pos + sizeof(selector_t) + sizeof(payload_t));
 
                 int remaining_bits = sublane_width;
                 std::size_t offset = 0;
+                std::uint8_t frame_width;
 
                 dfa_pos = 0;
                 dfa_run_length = 0;
@@ -78,13 +80,10 @@ namespace EliasGammaPacker
                     BitRunDFA(reinterpret_cast<const std::uint8_t*>(src), src_size);
 
                     const __m256i values1 = _mm256_load_si256((const __m256i*)buffer.ptr());
-                    const __m256i values2 = _mm256_load_si256((const __m256i*)(buffer.ptr()+POFFSET));
+                    const __m256i values2 = _mm256_load_si256((const __m256i*)(buffer.ptr() + values_offset));
 
                     //Process 16 integers
                     //SIMD code Group Elias Gamma here 2x AVX2 (16x32)
-
-                    std::uint8_t frame_width = 0;
-                    
                     //Get width (log2+1) of 16 integers
                     {
                         run_length_t merge = run_length_t{1};
@@ -130,7 +129,7 @@ namespace EliasGammaPacker
                         if(dst_pos + sizeof(selector_t) + 2*sizeof(payload_t) >= dst_end)
                             throw std::runtime_error("egprle :: encode : Out of range");
 
-                        //Update pointers
+                        //Update pointers (need 32-byte alignment)
                         selector = reinterpret_cast<selector_t*>(dst_pos);
                         payload1 = reinterpret_cast<payload_t*>(dst_pos + sizeof(selector_t));
                         payload2 = reinterpret_cast<payload_t*>(dst_pos + sizeof(selector_t) + sizeof(payload_t));
@@ -164,6 +163,99 @@ namespace EliasGammaPacker
 
             std::size_t decode(char* dst, std::size_t dst_size, const char* src, std::size_t src_size)
             {
+                int constexpr empty_selector_value = sizeof(selector_t)*8+1;
+
+                const std::uint8_t* src_pos = reinterpret_cast<const std::uint8_t*>(src);
+                const std::uint8_t* const src_end = src_pos + src_size;
+
+                std::uint8_t* dst_pos = reinterpret_cast<std::uint8_t*>(dst);
+                std::uint8_t* const dst_end = dst_pos + dst_size;
+
+                //Zero destination
+                std::memset(dst, 0, dst_size);
+
+                selector_t selector{0};
+                payload_t payload1, payload2;
+                alignas(32) run_length_t values[16];
+
+                int remaining_bits = sublane_width;
+                int frame_width;
+
+                buffer.clear();
+
+                selector = *reinterpret_cast<const selector_t*>(src_pos);
+                //TODO: LOADU maybe unnecessary, LOAD could be use directly
+                payload1.v = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(src_pos + sizeof(selector_t)));
+                payload2.v = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(src_pos + sizeof(selector_t) + sizeof(payload_t)));
+                frame_width = __builtin_ctz(selector) + 1;
+
+                std::size_t nb_values;
+                std::size_t nb_decoded_values;
+
+                do 
+                {
+                    while(selector != 0)
+                    {
+                        frame_width = __builtin_ctz(selector) + 1;    
+                        
+                        const __m256i mask = _mm256_load_si256((const __m256i*)mask_lsb[frame_width]);
+
+                        //Extract values from payloads
+                        *(__m256i*)(values)   = _mm256_and_si256(payload1.v, mask);
+                        *(__m256i*)(values+8) = _mm256_and_si256(payload2.v, mask);
+                        //process(values)
+                        
+                        payload1.v = _mm256_srli_epi32(payload1.v, frame_width);
+                        payload2.v = _mm256_srli_epi32(payload2.v, frame_width);
+                        selector >>= frame_width;
+                        remaining_bits -= frame_width;
+                    }
+                    
+                    frame_width = remaining_bits;
+
+                    const __m256i mask = _mm256_load_si256((const __m256i*)mask_lsb[frame_width]);
+
+                    //Extract values from payloads (last frame)
+                    *(__m256i*)(values)   = payload1.v;
+                    *(__m256i*)(values+8) = payload2.v;
+                    //process(values)
+                    
+                    //Seek next selector + 2 payloads
+                    src_pos += sizeof(selector_t) + 2 * sizeof(payload_t);
+                    if(src_pos + sizeof(selector_t) + 2*sizeof(payload_t) >= src_end)
+                        throw std::runtime_error("egprle :: decode : Out of range");
+
+                    selector = *reinterpret_cast<const selector_t*>(src_pos);
+                    //TODO: LOADU maybe unnecessary, LOAD could be use directly
+                    payload1.v = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(src_pos + sizeof(selector_t)));
+                    payload2.v = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(src_pos + sizeof(selector_t) + sizeof(payload_t)));
+
+                    frame_width = __builtin_ctz(selector) + 1;
+
+                    _mm256_slli_epi32(*(__m256i*)values, x)
+                    
+                    
+
+                    //TODO: custom implementation
+                    
+
+
+
+                    
+
+                    //Selector and payloads overlap on next block (selector is 0) [CHECK REMAINING_BITS==0]
+  
+                    //TODO: process(values, nb_values);
+
+                    //Update selector and payloads for next extraction (conditional check may be costly)
+                    
+
+
+                     
+                    
+                } while(nb_decoded_values < nb_values);
+
+                
                 /*std::size_t bit_pos = 0;
                 std::size_t run_length = 0;
                 
