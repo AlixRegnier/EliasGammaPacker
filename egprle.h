@@ -163,7 +163,7 @@ namespace EliasGammaPacker
 
             std::size_t decode(char* dst, std::size_t dst_size, const char* src, std::size_t src_size)
             {
-                int constexpr empty_selector_value = sizeof(selector_t)*8+1;
+                int constexpr read_size = sizeof(selector_t) + 2*sizeof(payload_t);
 
                 const std::uint8_t* src_pos = reinterpret_cast<const std::uint8_t*>(src);
                 const std::uint8_t* const src_end = src_pos + src_size;
@@ -176,84 +176,65 @@ namespace EliasGammaPacker
 
                 selector_t selector{0};
                 payload_t payload1, payload2;
-                alignas(32) run_length_t values[16];
 
-                int remaining_bits = sublane_width;
+                alignas(32) run_length_t values[16] = {0};
+                __m256i* const v1 = (__m256i*)values;
+                __m256i* const v2 = (__m256i*)(values+8);
+
+                int remaining_bits;
                 int frame_width;
 
                 buffer.clear();
 
-                selector = *reinterpret_cast<const selector_t*>(src_pos);
-                //TODO: LOADU maybe unnecessary, LOAD could be use directly
-                payload1.v = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(src_pos + sizeof(selector_t)));
-                payload2.v = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(src_pos + sizeof(selector_t) + sizeof(payload_t)));
-                frame_width = __builtin_ctz(selector) + 1;
-
                 std::size_t nb_values;
                 std::size_t nb_decoded_values;
 
-                do 
+                while(src_pos + read_size < src_end)
                 {
-                    while(selector != 0)
-                    {
-                        frame_width = __builtin_ctz(selector) + 1;    
-                        
-                        const __m256i mask = _mm256_load_si256((const __m256i*)mask_lsb[frame_width]);
-
-                        //Extract values from payloads
-                        *(__m256i*)(values)   = _mm256_and_si256(payload1.v, mask);
-                        *(__m256i*)(values+8) = _mm256_and_si256(payload2.v, mask);
-                        //process(values)
-                        
-                        payload1.v = _mm256_srli_epi32(payload1.v, frame_width);
-                        payload2.v = _mm256_srli_epi32(payload2.v, frame_width);
-                        selector >>= frame_width;
-                        remaining_bits -= frame_width;
-                    }
-                    
-                    frame_width = remaining_bits;
-
-                    const __m256i mask = _mm256_load_si256((const __m256i*)mask_lsb[frame_width]);
-
-                    //Extract values from payloads (last frame)
-                    *(__m256i*)(values)   = payload1.v;
-                    *(__m256i*)(values+8) = payload2.v;
-                    //process(values)
-                    
-                    //Seek next selector + 2 payloads
-                    src_pos += sizeof(selector_t) + 2 * sizeof(payload_t);
-                    if(src_pos + sizeof(selector_t) + 2*sizeof(payload_t) >= src_end)
-                        throw std::runtime_error("egprle :: decode : Out of range");
+                    remaining_bits = sublane_width;
 
                     selector = *reinterpret_cast<const selector_t*>(src_pos);
                     //TODO: LOADU maybe unnecessary, LOAD could be use directly
                     payload1.v = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(src_pos + sizeof(selector_t)));
                     payload2.v = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(src_pos + sizeof(selector_t) + sizeof(payload_t)));
-
+                    
                     frame_width = __builtin_ctz(selector) + 1;
+                    const __m256i mask = _mm256_load_si256((const __m256i*)mask_lsb[frame_width]);
 
-                    _mm256_slli_epi32(*(__m256i*)values, x)
+                    *v1 = _mm256_or_si256(_mm256_slli_epi32(*v1, frame_width), _mm256_and_si256(payload1.v, mask));
+                    *v2 = _mm256_or_si256(_mm256_slli_epi32(*v2, frame_width), _mm256_and_si256(payload2.v, mask));
+                    //process(values)
+
+                    payload1.v = _mm256_srli_epi32(payload1.v, frame_width);
+                    payload2.v = _mm256_srli_epi32(payload2.v, frame_width);
+
+                    selector >>= frame_width;
+                    remaining_bits -= frame_width;
                     
+                    while(selector != 0)
+                    {
+                        frame_width = __builtin_ctz(selector) + 1;
+                        const __m256i mask = _mm256_load_si256((const __m256i*)mask_lsb[frame_width]);
+
+                        *v1 = _mm256_and_si256(payload1.v, mask);
+                        *v2 = _mm256_and_si256(payload2.v, mask);
+                        //process(values)
+                        
+                        payload1.v = _mm256_srli_epi32(payload1.v, frame_width);
+                        payload2.v = _mm256_srli_epi32(payload2.v, frame_width);
+
+                        selector >>= frame_width;
+                        remaining_bits -= frame_width; //Note: can't be negative as sum of frame_width is less than or equal to 32
+                    }
                     
-
-                    //TODO: custom implementation
+                    //Handle overlap (even if no overlap, "if" would slow process)
+                    //Extract values from payloads (last frame)
+                    *v1 = payload1.v;
+                    *v2 = payload2.v;
                     
-
-
-
-                    
-
-                    //Selector and payloads overlap on next block (selector is 0) [CHECK REMAINING_BITS==0]
-  
-                    //TODO: process(values, nb_values);
-
-                    //Update selector and payloads for next extraction (conditional check may be costly)
-                    
-
-
-                     
-                    
-                } while(nb_decoded_values < nb_values);
+                    //Move cursor
+                    src_pos += read_size;
+                }
 
                 
                 /*std::size_t bit_pos = 0;
