@@ -208,8 +208,11 @@ namespace EliasGammaPacker
                 std::uint8_t* const dst_end = dst_pos + dst_size;
 
                 const __m256i ones = _mm256_set1_epi32(1);
+                
+                meta = read_meta(src);
 
                 std::size_t bit_pos = 0;
+                const std::size_t bit_end = dst_size*8;
 
                 //Zero destination
                 std::memset(dst, 0, dst_size);
@@ -221,14 +224,12 @@ namespace EliasGammaPacker
                 __m256i* const v1 = (__m256i*)values;
                 __m256i* const v2 = (__m256i*)(values+values_offset);
 
-                std::size_t nb_values = 0;
-
                 int remaining_bits;
                 int frame_width;
+                
 
-                meta = read_meta(src);
 
-                while(src_pos + read_size <= src_end)
+                while(bit_pos < bit_end)
                 {
                     remaining_bits = sublane_width;
 
@@ -242,7 +243,7 @@ namespace EliasGammaPacker
 
                     *v1 = _mm256_add_epi32(_mm256_or_si256(_mm256_slli_epi32(*v1, frame_width), _mm256_and_si256(payload1.v, mask)), ones);
                     *v2 = _mm256_add_epi32(_mm256_or_si256(_mm256_slli_epi32(*v2, frame_width), _mm256_and_si256(payload2.v, mask)), ones);
-                    decode_bit_runs(dst_pos, bit_pos, values, nb_values);
+                    decode_bit_runs(dst_pos, bit_pos, bit_end, values, meta.starting_bit_value);
 
                     payload1.v = _mm256_srli_epi32(payload1.v, frame_width);
                     payload2.v = _mm256_srli_epi32(payload2.v, frame_width);
@@ -257,7 +258,7 @@ namespace EliasGammaPacker
 
                         *v1 = _mm256_add_epi32(_mm256_and_si256(payload1.v, mask), ones);
                         *v2 = _mm256_add_epi32(_mm256_and_si256(payload2.v, mask), ones);
-                        decode_bit_runs(dst_pos, bit_pos, values, nb_values);
+                        decode_bit_runs(dst_pos, bit_pos, bit_end, values, meta.starting_bit_value);
                         
                         payload1.v = _mm256_srli_epi32(payload1.v, frame_width);
                         payload2.v = _mm256_srli_epi32(payload2.v, frame_width);
@@ -296,7 +297,9 @@ namespace EliasGammaPacker
                 std::uint8_t* dst_pos = reinterpret_cast<std::uint8_t*>(dst);
                 std::uint8_t* const dst_end = reinterpret_cast<std::uint8_t*>(dst) + dst_size;
 
-                __m256i ones = _mm256_set1_epi32(1);
+                const __m256i ones = _mm256_set1_epi32(1);
+
+                const std::size_t bit_end = decode_until_size*8;
 
                 switch(d.next_entry_point)
                 {
@@ -330,7 +333,7 @@ namespace EliasGammaPacker
                     *v2 = _mm256_add_epi32(_mm256_or_si256(_mm256_slli_epi32(*v2, d.frame_width), _mm256_and_si256(d.payload2.v, d.mask)), ones);
 
                     d.next_entry_point = entry_point_t::begin;
-                    decode_bit_runs(dst_pos, d.bit_pos, values, nb_values);
+                    decode_bit_runs(dst_pos, d.bit_pos, bit_end, values, meta.starting_bit_value);
                 egp_begin:
                     d.payload1.v = _mm256_srli_epi32(d.payload1.v, d.frame_width);
                     d.payload2.v = _mm256_srli_epi32(d.payload2.v, d.frame_width);
@@ -346,7 +349,7 @@ namespace EliasGammaPacker
                         *v1 = _mm256_add_epi32(_mm256_and_si256(d.payload1.v, d.mask), ones);
                         *v2 = _mm256_add_epi32(_mm256_and_si256(d.payload2.v, d.mask), ones);
                         d.next_entry_point = entry_point_t::inner;
-                        decode_bit_runs(dst_pos, d.bit_pos, values, nb_values);
+                        decode_bit_runs(dst_pos, d.bit_pos, bit_end, values, meta.starting_bit_value);
                 egp_inner:
                         d.payload1.v = _mm256_srli_epi32(d.payload1.v, d.frame_width);
                         d.payload2.v = _mm256_srli_epi32(d.payload2.v, d.frame_width);
@@ -368,28 +371,41 @@ namespace EliasGammaPacker
             std::size_t decode_partial_backward(char* dst, std::size_t dst_size, const char* src, std::size_t src_size, std::size_t decode_until_size);
 
             //Encode 'nb_runs' runs of bits into 'dst', return current byte position
-            static void decode_bit_runs(std::uint8_t* const dst, std::size_t& bit_pos, const run_length_t* const runs, std::size_t nb_values)
+            static void decode_bit_runs(std::uint8_t* const dst, std::size_t& bit_pos, const std::size_t bit_end, const run_length_t* const runs, const bool starting_bit_value)
             {
-                //Skip zeroes
-                for(int i = 0; i < nb_runs; i += 2)
+                int i;
+                if(starting_bit_value == 0)
+                {
+                    i = 1;
+                    bit_pos += runs[0];
+                }
+                else
+                    i = 0;
+
+                //Skip zeroes, set bits for ones
+                while(i < nb_runs && bit_pos < bit_end)
                 {
                     setBits(dst, bit_pos, runs[i]);
 
                     bit_pos += runs[i] + runs[i+1];
+                    i += 2;
                 }
+
+                if(starting_bit_value == 0)
+                    bit_pos += runs[nb_runs-1];
             }
 
             static void setBits(std::uint8_t* dst, std::size_t startBit, std::size_t count)
             {
-                std::size_t byte = startBit >> 3;
-                unsigned bit = startBit & 7;
+                std::size_t byte = startBit / 8;
+                unsigned bit = startBit & 7; //Mod 8
 
                 // first partial byte
                 if (bit)
                 {
                     unsigned n = std::min<size_t>(count, 8 - bit);
 
-                    dst[byte] |= std::uint8_t(((1u << n) - 1) << (8 - bit - n));
+                    dst[byte] |= std::uint8_t{((1u << n) - 1) << (8 - bit - n)};
 
                     count -= n;
                     ++byte;
@@ -399,7 +415,7 @@ namespace EliasGammaPacker
                 }
 
                 // full bytes
-                size_t fullBytes = count >> 3;
+                std::size_t fullBytes = count / 8;
                 std::memset(dst + byte, 0xFF, fullBytes);
 
                 byte += fullBytes;
@@ -407,7 +423,7 @@ namespace EliasGammaPacker
 
                 // last partial byte
                 if (count)
-                    dst[byte] |= uint8_t(0xFF << (8 - count));
+                    dst[byte] |= std::uint8_t{0xFF << (8 - count)};
             }
 
     };

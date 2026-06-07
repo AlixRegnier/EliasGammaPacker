@@ -1,4 +1,5 @@
 #include "../bitpacker.h"
+#include "../egprle.h"
 #include <string>
 #include <random>
 
@@ -66,6 +67,25 @@ bool test_log2_64()
     }
 
     return true;
+}
+
+bool test_set_bits()
+{
+    std::uint8_t s[4096] = {0};
+    EliasGammaPacker::EGPRLE::setBits(s, 0, 24);
+
+    for(int i = 0; i < 200; ++i)
+    {
+        if(!ASSERT_EQ(truth, test, "log2_64", value))
+        {
+            return false;   
+        }
+    }
+}
+
+bool test_decode_runs()
+{
+    
 }
 
 int main()
