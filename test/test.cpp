@@ -4,7 +4,7 @@
 #include <iostream>
 
 #define ASSERT(expr, msg) massert((expr), "Assertion failed "#expr",", msg)
-#define ASSERT_EQ(a, b, function_name, value) ASSERT((a == b), function_name"(" + std::to_string(value) + "): " + std::to_string(a) + " == " + std::to_string(b))
+#define ASSERT_EQ(a, b, function_name, value) ASSERT((a == b), function_name"(" + std::to_string(value) + ")")
 
 #define TEST_FUNC(f) { \
         bool b = f(); \
@@ -77,6 +77,78 @@ bool test_log2_64()
         std::uint8_t truth = 63 - __builtin_clzll(std::uint64_t{value});
         
         if(!ASSERT_EQ(truth, test, "log2_64", value))
+            return false;
+    }
+
+    return true;
+}
+
+bool test_circular_buffer()
+{
+    CircularDoubleBuffer<EliasGammaPacker::run_length_t, EliasGammaPacker::nb_runs> buffer;
+
+    if(!ASSERT_EQ(buffer.buffer_size(), EliasGammaPacker::nb_runs, "CircularDoubleBuffer::buffer_size()", buffer.buffer_size()))
+    {
+        return false;
+    }
+
+    EliasGammaPacker::run_length_t values[37] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36};
+
+    //Full with no inner modulo cycling
+    for(int i = 0; i < 32; ++i)
+    {
+        buffer.push(values[i]);
+    }
+
+    if(!ASSERT_EQ(buffer.size(), EliasGammaPacker::nb_runs, "CircularDoubleBuffer::size()", buffer.size()))
+    {
+        return false;
+    }
+
+    EliasGammaPacker::run_length_t* p1 = buffer.ptr();
+    buffer.cycle();
+    EliasGammaPacker::run_length_t* p2 = buffer.ptr();
+    buffer.cycle();
+    EliasGammaPacker::run_length_t* p3 = buffer.ptr();
+
+    if(!ASSERT_EQ(p1 + EliasGammaPacker::nb_runs, p2, "CircularDoubleBuffer::ptr()", 0))
+    {
+        return false;
+    }
+
+    if(!ASSERT_EQ(p1, p3, "CircularDoubleBuffer::ptr()", 0))
+    {
+        return false;
+    }
+
+    //Check if values where properly attributed
+    for(int i = 0; i < 16; ++i)
+    {
+        if(!ASSERT_EQ(values[i], buffer[i], "CircularDoubleBuffer::[] eq (before cycling)", i))
+            return false;
+    }
+
+    buffer.cycle();
+
+    for(int i = 0; i < 16; ++i)
+    {
+        if(!ASSERT_EQ(values[i+16], buffer[i], "CircularDoubleBuffer::[] eq (after cycling)", i))
+            return false;
+    }
+
+    buffer.clear();
+
+    for(int i = 0; i < 16; ++i)
+    {
+        if(!ASSERT_EQ(0, buffer[i], "CircularDoubleBuffer::clear", i))
+            return false;
+    }
+
+    buffer.cycle();
+
+    for(int i = 0; i < 16; ++i)
+    {
+        if(!ASSERT_EQ(0, buffer[i], "CircularDoubleBuffer::clear", i))
             return false;
     }
 
@@ -224,6 +296,7 @@ int main()
 {
     TEST_FUNC(test_log2_8)
     TEST_FUNC(test_log2_64)
+    TEST_FUNC(test_circular_buffer)
     TEST_FUNC(test_set_bits)
     TEST_FUNC(test_decode_runs)
 }

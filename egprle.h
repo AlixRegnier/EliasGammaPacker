@@ -373,7 +373,7 @@ namespace EliasGammaPacker
                 }
             }
 
-            //Not implemented (need metadata for )
+            //Not implemented
             std::size_t decode_partial_backward(char* dst, std::size_t dst_size, const char* src, std::size_t src_size, std::size_t decode_until_size);
 
             //Encode 'nb_runs' runs of bits into 'dst', return current byte position
