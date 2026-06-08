@@ -104,6 +104,41 @@ namespace EliasGammaPacker
 
     #undef V8_x_32
 
+    static const std::uint8_t LUT_log2_8[] = {
+   255, 0, 1, 1, 2, 2, 2, 2,
+     3, 3, 3, 3, 3, 3, 3, 3,
+     4, 4, 4, 4, 4, 4, 4, 4,
+     4, 4, 4, 4, 4, 4, 4, 4,
+     5, 5, 5, 5, 5, 5, 5, 5,
+     5, 5, 5, 5, 5, 5, 5, 5,
+     5, 5, 5, 5, 5, 5, 5, 5,
+     5, 5, 5, 5, 5, 5, 5, 5,
+     6, 6, 6, 6, 6, 6, 6, 6,
+     6, 6, 6, 6, 6, 6, 6, 6,
+     6, 6, 6, 6, 6, 6, 6, 6,
+     6, 6, 6, 6, 6, 6, 6, 6,
+     6, 6, 6, 6, 6, 6, 6, 6,
+     6, 6, 6, 6, 6, 6, 6, 6,
+     6, 6, 6, 6, 6, 6, 6, 6,
+     6, 6, 6, 6, 6, 6, 6, 6,
+     7, 7, 7, 7, 7, 7, 7, 7,
+     7, 7, 7, 7, 7, 7, 7, 7,
+     7, 7, 7, 7, 7, 7, 7, 7,
+     7, 7, 7, 7, 7, 7, 7, 7,
+     7, 7, 7, 7, 7, 7, 7, 7,
+     7, 7, 7, 7, 7, 7, 7, 7,
+     7, 7, 7, 7, 7, 7, 7, 7,
+     7, 7, 7, 7, 7, 7, 7, 7,
+     7, 7, 7, 7, 7, 7, 7, 7,
+     7, 7, 7, 7, 7, 7, 7, 7,
+     7, 7, 7, 7, 7, 7, 7, 7,
+     7, 7, 7, 7, 7, 7, 7, 7,
+     7, 7, 7, 7, 7, 7, 7, 7,
+     7, 7, 7, 7, 7, 7, 7, 7,
+     7, 7, 7, 7, 7, 7, 7, 7,
+     7, 7, 7, 7, 7, 7, 7, 7
+};
+
     // Swap bytes of a 64-bit integer to big endian
     std::uint64_t inline toBigEndian64(std::uint64_t val) {
         #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
@@ -133,6 +168,15 @@ namespace EliasGammaPacker
         // value |= value >> 32;
         // return tab64[((std::uint64_t)((value - (value >> 1))*0x07EDD5E59A4E28C2)) >> 58];
         return 63 - __builtin_clzll(value);
+    }
+
+    std::uint8_t inline log2_8(std::uint8_t value)
+    {
+        // value |= value >> 1;
+        // value |= value >> 2;
+        // value |= value >> 4;
+        // return tab8[((std::uint8_t)((value - (value >> 1))*0x1D)) >> 5];
+        return LUT_log2_8[value];
     }
     
     template<typename T>

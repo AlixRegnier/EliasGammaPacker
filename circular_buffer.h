@@ -7,13 +7,13 @@ template<typename N, std::size_t _size>
 class CircularDoubleBuffer
 {
     private:
-        alignas(32) N buffer[_size*2];
-        std::size_t offset;
-        std::size_t get_offset;
+        alignas(32) N buffer[_size*2] = {0};
+        std::size_t offset = {0};
+        std::size_t get_offset = {0};
     public:
         CircularDoubleBuffer()
         {
-            clear();
+
         }
 
         CircularDoubleBuffer(const CircularDoubleBuffer<N,_size>& other) noexcept
@@ -29,7 +29,7 @@ class CircularDoubleBuffer
         CircularDoubleBuffer(CircularDoubleBuffer<N, _size>&& other) noexcept
             : buffer(other.buffer), offset(other.offset), get_offset(other.get_offset)
         {
-            other.buffer = nullptr;
+
         }
 
         CircularDoubleBuffer<N, _size>& operator=(CircularDoubleBuffer<N, _size>&& other) noexcept {
@@ -41,8 +41,6 @@ class CircularDoubleBuffer
                 this->offset = other.offset;
                 this->get_offset = other.get_offset;
                 std::memcpy(this->buffer, other.buffer, sizeof(other.buffer));
-
-                other.buffer = nullptr;
             }
 
             return *this;
@@ -69,13 +67,12 @@ class CircularDoubleBuffer
         {
             this->offset = 0;
             this->get_offset = 0;
+            std::memset(buffer, 0, sizeof(buffer));
         }
 
         virtual ~CircularDoubleBuffer()
         {
-            if(buffer != nullptr)
-                delete[] buffer;
-            buffer = nullptr;
+            clear();
         }
     
         void push(const N& value)

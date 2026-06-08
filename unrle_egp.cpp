@@ -23,9 +23,6 @@ int main(int argc, char ** args) {
     std::string in_filename = args[1];
     std::string out_filename = args[2];
 
-    std::size_t in_file_size;
-    std::size_t out_file_size;
-
     //Input file
     int in_fd = open(in_filename.c_str(), O_RDONLY);
 
@@ -34,6 +31,8 @@ int main(int argc, char ** args) {
         std::cerr << "main : couldn't open file '" << in_filename << "' (" << strerror(errno) << ')' << std::endl;
         return 2;
     }
+
+    std::size_t in_file_size = lseek(in_fd, 0, SEEK_END);
 
     char* in_map = (char*)mmap(nullptr, in_file_size, PROT_READ, MAP_PRIVATE, in_fd, 0);
 

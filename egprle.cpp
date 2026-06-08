@@ -4158,8 +4158,3 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
 }
 
 }
-
-int main()
-{
-    
-}

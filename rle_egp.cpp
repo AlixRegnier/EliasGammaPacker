@@ -64,10 +64,16 @@ int main(int argc, char ** args) {
         return 2;
     }
 
-    std::size_t out_file_size = EliasGammaPacker::EGPRLE::read_meta(in_map).out_size;
-
     //Encode
     EliasGammaPacker::EGPRLE().encode(out_map, out_file_size, in_map, in_file_size);
+
+    out_file_size = EliasGammaPacker::EGPRLE::read_meta(in_map).out_size;
+
+    if (ftruncate(out_fd, out_file_size) == -1)
+    {
+        std::cerr << "main : file resizing failed (" << strerror(errno) << ')' << std::endl;
+        return 2;
+    }
 
     munmap(in_map, in_file_size);
     munmap(out_map, out_file_size);

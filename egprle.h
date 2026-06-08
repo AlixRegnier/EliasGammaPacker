@@ -1,5 +1,5 @@
-#ifndef EGPRLE_H
-#define EGPRLE_H
+#ifndef EGP_RLE_H
+#define EGP_RLE_H
 
 #include <cstdlib>
 #include <cstdint>
