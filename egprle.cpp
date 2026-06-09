@@ -24,7 +24,9 @@ namespace EliasGammaPacker
 void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length) 
 {
     bit_run_dfa_struct_t& d = dfa_data;
-    
+
+    const std::size_t s = buffer.pushed_values();
+
     std::uint8_t byte = input[d.dfa_pos];
     d.dfa_state = (byte >> 7) & 1;
 
@@ -39,7 +41,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
     while(d.dfa_pos < length)
     {
         //Return here when >= 16 run lengths were pushed
-        if(buffer.size() == 16)
+        if(buffer.pushed_values() - s >= 16)
             return;
 
         byte = input[d.dfa_pos++];

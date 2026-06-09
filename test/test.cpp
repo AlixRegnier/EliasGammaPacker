@@ -87,23 +87,17 @@ bool test_circular_buffer()
 {
     CircularDoubleBuffer<EliasGammaPacker::run_length_t, EliasGammaPacker::nb_runs> buffer;
 
-    if(!ASSERT_EQ(buffer.buffer_size(), EliasGammaPacker::nb_runs, "CircularDoubleBuffer::buffer_size()", buffer.buffer_size()))
-    {
+    if(!ASSERT_EQ(buffer.size(), EliasGammaPacker::nb_runs, "CircularDoubleBuffer::buffer_size()", buffer.size()))
         return false;
-    }
 
     EliasGammaPacker::run_length_t values[37] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36};
 
     //Full with no inner modulo cycling
     for(int i = 0; i < 32; ++i)
-    {
         buffer.push(values[i]);
-    }
 
     if(!ASSERT_EQ(buffer.size(), EliasGammaPacker::nb_runs, "CircularDoubleBuffer::size()", buffer.size()))
-    {
         return false;
-    }
 
     EliasGammaPacker::run_length_t* p1 = buffer.ptr();
     buffer.cycle();
@@ -112,45 +106,33 @@ bool test_circular_buffer()
     EliasGammaPacker::run_length_t* p3 = buffer.ptr();
 
     if(!ASSERT_EQ(p1 + EliasGammaPacker::nb_runs, p2, "CircularDoubleBuffer::ptr()", 0))
-    {
         return false;
-    }
 
     if(!ASSERT_EQ(p1, p3, "CircularDoubleBuffer::ptr()", 0))
-    {
         return false;
-    }
 
     //Check if values where properly attributed
     for(int i = 0; i < 16; ++i)
-    {
         if(!ASSERT_EQ(values[i], buffer[i], "CircularDoubleBuffer::[] eq (before cycling)", i))
             return false;
-    }
 
     buffer.cycle();
 
     for(int i = 0; i < 16; ++i)
-    {
         if(!ASSERT_EQ(values[i+16], buffer[i], "CircularDoubleBuffer::[] eq (after cycling)", i))
             return false;
-    }
 
     buffer.clear();
 
     for(int i = 0; i < 16; ++i)
-    {
         if(!ASSERT_EQ(0, buffer[i], "CircularDoubleBuffer::clear", i))
             return false;
-    }
 
     buffer.cycle();
 
     for(int i = 0; i < 16; ++i)
-    {
         if(!ASSERT_EQ(0, buffer[i], "CircularDoubleBuffer::clear", i))
             return false;
-    }
 
     return true;
 }
@@ -200,20 +182,12 @@ bool test_set_bits()
     };
 
     for(int i = 0; i < sizeof(truth1); ++i)
-    {
         if(!ASSERT_EQ(truth1[i], test1[i], "byte equal", i))
-        {
-            return false;   
-        }
-    }
+            return false;
 
     for(int i = 0; i < sizeof(truth2); ++i)
-    {
         if(!ASSERT_EQ(truth2[i], test2[i], "byte equal", i))
-        {
             return false;
-        }
-    }
 
     return true;
 }
@@ -268,23 +242,15 @@ bool test_decode_runs()
     EliasGammaPacker::EGPRLE::decode_bit_runs(test2, bit_pos2, sizeof(test2)*8, values2, 10, first_bit_value2);
 
     for(int i = 0; i < sizeof(truth1); ++i)
-    {
         if(!ASSERT_EQ(truth1[i], test1[i], "byte equal", i))
-        {
             return false;
-        }
-    }
 
     if(!ASSERT_EQ(bit_pos1, sizeof(test1)*8, "bit_pos", bit_pos1))
         return false;
 
     for(int i = 0; i < sizeof(truth2); ++i)
-    {
         if(!ASSERT_EQ(truth2[i], test2[i], "byte equal", i))
-        {
             return false;
-        }
-    }
 
     if(!ASSERT_EQ(bit_pos2, sizeof(test2)*8, "bit_pos", bit_pos2))
         return false;

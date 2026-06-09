@@ -10,11 +10,9 @@ class CircularDoubleBuffer
         alignas(32) N buffer[_size*2] = {0};
         std::size_t offset = {0};
         std::size_t get_offset = {0};
+        std::size_t nb_pushed_value = {0};
     public:
-        CircularDoubleBuffer()
-        {
-
-        }
+        CircularDoubleBuffer() noexcept {}
 
         CircularDoubleBuffer(const CircularDoubleBuffer<N,_size>& other) noexcept
         {
@@ -27,16 +25,11 @@ class CircularDoubleBuffer
         }
 
         CircularDoubleBuffer(CircularDoubleBuffer<N, _size>&& other) noexcept
-            : buffer(other.buffer), offset(other.offset), get_offset(other.get_offset)
-        {
-
-        }
+            : buffer(other.buffer), offset(other.offset), get_offset(other.get_offset) {}
 
         CircularDoubleBuffer<N, _size>& operator=(CircularDoubleBuffer<N, _size>&& other) noexcept {
             if (this != &other) 
             {
-                delete[] buffer;
-
                 this->buffer = other.buffer;
                 this->offset = other.offset;
                 this->get_offset = other.get_offset;
@@ -65,9 +58,10 @@ class CircularDoubleBuffer
 
         void clear()
         {
-            this->offset = 0;
-            this->get_offset = 0;
-            std::memset(buffer, 0, sizeof(buffer));
+            offset = 0;
+            get_offset = 0;
+            nb_pushed_value = 0;
+            std::memset(buffer, 0, 2*sizeof(N)*_size);
         }
 
         virtual ~CircularDoubleBuffer()
@@ -79,6 +73,8 @@ class CircularDoubleBuffer
         {
             buffer[offset++] = value;
             offset %= _size*2;
+
+            ++nb_pushed_value;
         }
 
         N* ptr()
@@ -91,14 +87,15 @@ class CircularDoubleBuffer
             return buffer + get_offset;
         }
 
-        std::size_t buffer_size() const
+        //Warning: May return "_size" if empty.
+        std::size_t constexpr size() const
         {
             return _size;
         }
 
-        std::size_t size() const
+        std::size_t pushed_values() const
         {
-            return (offset % _size) + 1;
+            return nb_pushed_value;
         }
 
         void cycle()

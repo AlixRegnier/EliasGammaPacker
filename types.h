@@ -52,20 +52,16 @@ namespace EliasGammaPacker
 
     using selector_t = static_uint_t<selector_width>; //Must be 32-byte aligned
 
-    template <std::uint64_t T>
-    union payload_t {
-        __m256i v;
-        static_uint_t<T> arr[lane_width/(sizeof(static_uint_t<T>)*8)];
-    };
-
     enum entry_point_t { init, begin, inner };
 
+    using payload_t = __m256i;
+    
     struct decode_partial_struct_t {
         __m256i mask;
+        __m256i payload1;
+        __m256i payload2;
 
         selector_t selector;
-        payload_t<sublane_width> payload1;
-        payload_t<sublane_width> payload2;
 
         int remaining_bits;
         int frame_width;

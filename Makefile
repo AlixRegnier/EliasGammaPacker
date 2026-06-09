@@ -1,11 +1,12 @@
-CPPFLAGS=-O3 -std=c++17 -march=native -mavx2 -Wall #-DEGP_NOCHECK
+CPPFLAGS=-O3 -std=c++17 -march=native -mavx2 -Wall
+#CPPFLAGS=-O0 -g -std=c++17 -march=native -mavx2 -Wall
 
 all: rle_egp unrle_egp
 
-rle_egp:   egprle.o rle_egp.cpp elias_gamma_packer.h
-	g++ ${CPPFLAGS} -o rle_egp   rle_egp.cpp egprle.o
+rle_egp:   egprle.o rle_egp.cpp
+	g++ ${CPPFLAGS} -o rle_egp  rle_egp.cpp egprle.o
 
-unrle_egp: egprle.o unrle_egp.cpp elias_gamma_packer.h
+unrle_egp: egprle.o unrle_egp.cpp
 	g++ ${CPPFLAGS} -o unrle_egp unrle_egp.cpp egprle.o
 
 test: ./test/test.cpp

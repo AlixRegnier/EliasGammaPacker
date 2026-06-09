@@ -21,15 +21,21 @@ int main(int argc, char ** args) {
     int in_fd = open(in_filename.c_str(), O_RDONLY);
 
     if (in_fd == -1)
-        throw std::runtime_error("main (encoder) : couldn't open file '" + in_filename + "'");
+    {
+        std::cerr << "main (encoder) : couldn't open file '" << in_filename << "' (" << strerror(errno) << ')' << std::endl;
+        return 2;
+    }
 
     std::size_t in_file_size = lseek(in_fd, 0, SEEK_END);
 
     if(in_file_size == 0)
-        throw std::runtime_error("main : file was empty");
+    {
+        std::cerr << "main : input file size is 0" << std::endl;
+        return 2;
+    }
 
     char* in_map = (char*)mmap(nullptr, in_file_size, PROT_READ, MAP_PRIVATE, in_fd, 0);
-
+    
     if (in_map == MAP_FAILED)
     {
         std::cerr << "main : mmap initialization failed (" << strerror(errno) << ')' << std::endl;
@@ -63,11 +69,11 @@ int main(int argc, char ** args) {
         std::cerr << "main : mmap initialization failed (" << strerror(errno) << ')' << std::endl;
         return 2;
     }
+    
+    posix_madvise(out_map, out_file_size, MADV_SEQUENTIAL);
 
     //Encode
-    EliasGammaPacker::EGPRLE().encode(out_map, out_file_size, in_map, in_file_size);
-
-    out_file_size = EliasGammaPacker::EGPRLE::read_meta(in_map).out_size;
+    out_file_size = EliasGammaPacker::EGPRLE().encode(out_map, out_file_size, in_map, in_file_size);
 
     if (ftruncate(out_fd, out_file_size) == -1)
     {
