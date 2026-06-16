@@ -11,7 +11,7 @@ namespace EliasGammaPacker
     static const int lane_nb = 2;
     static const int sublane_width = lane_width * lane_nb / nb_runs;
     static const int selector_width = sublane_width;
-    static const int values_offset = lane_width / sublane_width;
+    static const int values_offset = nb_runs / 2;
 
     #define V8_x_32(x) {x, x, x, x, x, x, x, x}
 
@@ -156,27 +156,16 @@ namespace EliasGammaPacker
             return __builtin_bswap64(val);
         #endif
     }
-    
-    // Floor 
-    std::uint8_t inline log2_64(std::uint64_t value)
-    {
-        // value |= value >> 1;
-        // value |= value >> 2;
-        // value |= value >> 4;
-        // value |= value >> 8;
-        // value |= value >> 16;
-        // value |= value >> 32;
-        // return tab64[((std::uint64_t)((value - (value >> 1))*0x07EDD5E59A4E28C2)) >> 58];
-        return 63 - __builtin_clzll(value);
-    }
 
-    std::uint8_t inline log2_8(std::uint8_t value)
+    template <typename T>
+    int inline log2(T value)
     {
-        // value |= value >> 1;
-        // value |= value >> 2;
-        // value |= value >> 4;
-        // return tab8[((std::uint8_t)((value - (value >> 1))*0x1D)) >> 5];
-        return LUT_log2_8[value];
+        if constexpr (sizeof(T)*8 <= 8)
+            return LUT_log2_8[value];
+        else if constexpr (sizeof(T)*8 <= 32)
+            return 31 - __builtin_clz(value);
+        else
+            return 63 - __builtin_clzll(value);
     }
     
     template<typename T>

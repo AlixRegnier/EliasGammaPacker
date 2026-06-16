@@ -25,10 +25,8 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
 {
     bit_run_dfa_struct_t& d = dfa_data;
 
-    const std::size_t s = buffer.pushed_values();
-
     std::uint8_t byte = input[d.dfa_pos];
-    d.dfa_state = (byte >> 7) & 1;
+    int i = 0;
 
     #ifdef COMPUTED_GOTO
     const void* transitions[2][256] = {
@@ -41,7 +39,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
     while(d.dfa_pos < length)
     {
         //Return here when >= 16 run lengths were pushed
-        if(buffer.pushed_values() - s >= 16)
+        if(i >= 16)
             return;
 
         byte = input[d.dfa_pos++];
@@ -61,23 +59,27 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(d.dfa_run_length));
         d.dfa_run_length = 8;
         d.dfa_state = std::uint8_t{0};
+        i += 1;
         GOTO_LOOP;
     TARGET(0, 1)
         buffer.push(MOD_PUSH(d.dfa_run_length + 7));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 1;
         GOTO_LOOP;
     TARGET(1, 1)
         buffer.push(MOD_PUSH(d.dfa_run_length));
         buffer.push(MOD_PUSH(7));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 2)
         buffer.push(MOD_PUSH(d.dfa_run_length + 6));
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 2)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -85,23 +87,27 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 3)
         buffer.push(MOD_PUSH(d.dfa_run_length + 6));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 1;
         GOTO_LOOP;
     TARGET(1, 3)
         buffer.push(MOD_PUSH(d.dfa_run_length));
         buffer.push(MOD_PUSH(6));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 4)
         buffer.push(MOD_PUSH(d.dfa_run_length + 5));
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 4)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -109,6 +115,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 5)
         buffer.push(MOD_PUSH(d.dfa_run_length + 5));
@@ -116,6 +123,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 5)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -124,12 +132,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 6)
         buffer.push(MOD_PUSH(d.dfa_run_length + 5));
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 6)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -137,23 +147,27 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 7)
         buffer.push(MOD_PUSH(d.dfa_run_length + 5));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 1;
         GOTO_LOOP;
     TARGET(1, 7)
         buffer.push(MOD_PUSH(d.dfa_run_length));
         buffer.push(MOD_PUSH(5));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 8)
         buffer.push(MOD_PUSH(d.dfa_run_length + 4));
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 8)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -161,6 +175,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 9)
         buffer.push(MOD_PUSH(d.dfa_run_length + 4));
@@ -168,6 +183,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 9)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -176,6 +192,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 10)
         buffer.push(MOD_PUSH(d.dfa_run_length + 4));
@@ -184,6 +201,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 10)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -193,6 +211,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 11)
         buffer.push(MOD_PUSH(d.dfa_run_length + 4));
@@ -200,6 +219,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 11)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -208,12 +228,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 12)
         buffer.push(MOD_PUSH(d.dfa_run_length + 4));
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 12)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -221,6 +243,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 13)
         buffer.push(MOD_PUSH(d.dfa_run_length + 4));
@@ -228,6 +251,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 13)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -236,12 +260,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 14)
         buffer.push(MOD_PUSH(d.dfa_run_length + 4));
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 14)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -249,23 +275,27 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 15)
         buffer.push(MOD_PUSH(d.dfa_run_length + 4));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{1};
+        i += 1;
         GOTO_LOOP;
     TARGET(1, 15)
         buffer.push(MOD_PUSH(d.dfa_run_length));
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 16)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 16)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -273,6 +303,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 17)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -280,6 +311,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 17)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -288,6 +320,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 18)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -296,6 +329,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 18)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -305,6 +339,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 19)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -312,6 +347,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 19)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -320,6 +356,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 20)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -328,6 +365,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 20)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -337,6 +375,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 21)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -346,6 +385,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 21)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -356,6 +396,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 22)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -364,6 +405,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 22)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -373,6 +415,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 23)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -380,6 +423,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 23)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -388,12 +432,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 24)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 24)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -401,6 +447,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 25)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -408,6 +455,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 25)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -416,6 +464,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 26)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -424,6 +473,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 26)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -433,6 +483,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 27)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -440,6 +491,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 27)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -448,12 +500,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 28)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 28)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -461,6 +515,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 29)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -468,6 +523,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 29)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -476,12 +532,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 30)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 30)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -489,23 +547,27 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 31)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
         d.dfa_run_length = 5;
         d.dfa_state = std::uint8_t{1};
+        i += 1;
         GOTO_LOOP;
     TARGET(1, 31)
         buffer.push(MOD_PUSH(d.dfa_run_length));
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 5;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 32)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 5;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 32)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -513,6 +575,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 5;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 33)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -520,6 +583,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 33)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -528,6 +592,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 34)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -536,6 +601,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 34)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -545,6 +611,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 35)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -552,6 +619,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 35)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -560,6 +628,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 36)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -568,6 +637,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 36)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -577,6 +647,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 37)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -586,6 +657,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 37)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -596,6 +668,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 38)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -604,6 +677,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 38)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -613,6 +687,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 39)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -620,6 +695,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 39)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -628,6 +704,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 40)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -636,6 +713,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 40)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -645,6 +723,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 41)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -654,6 +733,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 41)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -664,6 +744,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 42)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -674,6 +755,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 42)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -685,6 +767,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 7;
         GOTO_LOOP;
     TARGET(0, 43)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -694,6 +777,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 43)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -704,6 +788,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 44)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -712,6 +797,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 44)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -721,6 +807,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 45)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -730,6 +817,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 45)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -740,6 +828,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 46)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -748,6 +837,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 46)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -757,6 +847,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 47)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -764,6 +855,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 47)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -772,12 +864,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 48)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 48)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -785,6 +879,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 49)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -792,6 +887,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 49)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -800,6 +896,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 50)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -808,6 +905,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 50)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -817,6 +915,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 51)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -824,6 +923,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 51)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -832,6 +932,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 52)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -840,6 +941,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 52)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -849,6 +951,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 53)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -858,6 +961,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 53)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -868,6 +972,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 54)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -876,6 +981,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 54)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -885,6 +991,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 55)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -892,6 +999,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 55)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -900,12 +1008,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 56)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 56)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -913,6 +1023,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 57)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -920,6 +1031,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 57)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -928,6 +1040,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 58)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -936,6 +1049,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 58)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -945,6 +1059,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 59)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -952,6 +1067,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 59)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -960,12 +1076,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 60)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 60)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -973,6 +1091,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 61)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -980,6 +1099,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 61)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -988,12 +1108,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 62)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
         buffer.push(MOD_PUSH(5));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 62)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1001,23 +1123,27 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(5));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 63)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
         d.dfa_run_length = 6;
         d.dfa_state = std::uint8_t{1};
+        i += 1;
         GOTO_LOOP;
     TARGET(1, 63)
         buffer.push(MOD_PUSH(d.dfa_run_length));
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 6;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 64)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 6;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 64)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1025,6 +1151,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 6;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 65)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1032,6 +1159,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(5));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 65)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1040,6 +1168,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(5));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 66)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1048,6 +1177,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 66)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1057,6 +1187,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 67)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1064,6 +1195,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 67)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1072,6 +1204,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 68)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1080,6 +1213,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 68)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1089,6 +1223,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 69)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1098,6 +1233,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 69)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1108,6 +1244,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 70)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1116,6 +1253,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 70)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1125,6 +1263,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 71)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1132,6 +1271,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 71)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1140,6 +1280,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 72)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1148,6 +1289,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 72)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1157,6 +1299,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 73)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1166,6 +1309,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 73)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1176,6 +1320,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 74)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1186,6 +1331,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 74)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1197,6 +1343,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 7;
         GOTO_LOOP;
     TARGET(0, 75)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1206,6 +1353,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 75)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1216,6 +1364,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 76)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1224,6 +1373,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 76)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1233,6 +1383,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 77)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1242,6 +1393,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 77)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1252,6 +1404,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 78)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1260,6 +1413,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 78)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1269,6 +1423,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 79)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1276,6 +1431,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 79)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1284,6 +1440,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 80)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1292,6 +1449,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 80)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1301,6 +1459,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 81)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1310,6 +1469,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 81)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1320,6 +1480,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 82)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1330,6 +1491,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 82)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1341,6 +1503,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 7;
         GOTO_LOOP;
     TARGET(0, 83)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1350,6 +1513,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 83)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1360,6 +1524,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 84)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1370,6 +1535,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 84)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1381,6 +1547,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 7;
         GOTO_LOOP;
     TARGET(0, 85)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1392,6 +1559,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 7;
         GOTO_LOOP;
     TARGET(1, 85)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1404,6 +1572,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 8;
         GOTO_LOOP;
     TARGET(0, 86)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1414,6 +1583,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 86)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1425,6 +1595,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 7;
         GOTO_LOOP;
     TARGET(0, 87)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1434,6 +1605,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 87)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1444,6 +1616,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 88)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1452,6 +1625,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 88)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1461,6 +1635,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 89)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1470,6 +1645,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 89)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1480,6 +1656,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 90)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1490,6 +1667,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 90)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1501,6 +1679,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 7;
         GOTO_LOOP;
     TARGET(0, 91)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1510,6 +1689,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 91)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1520,6 +1700,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 92)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1528,6 +1709,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 92)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1537,6 +1719,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 93)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1546,6 +1729,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 93)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1556,6 +1740,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 94)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1564,6 +1749,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 94)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1573,6 +1759,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 95)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1580,6 +1767,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 5;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 95)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1588,12 +1776,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 5;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 96)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 5;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 96)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1601,6 +1791,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 5;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 97)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1608,6 +1799,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 97)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1616,6 +1808,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 98)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1624,6 +1817,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 98)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1633,6 +1827,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 99)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1640,6 +1835,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 99)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1648,6 +1844,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 100)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1656,6 +1853,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 100)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1665,6 +1863,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 101)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1674,6 +1873,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 101)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1684,6 +1884,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 102)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1692,6 +1893,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 102)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1701,6 +1903,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 103)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1708,6 +1911,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 103)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1716,6 +1920,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 104)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1724,6 +1929,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 104)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1733,6 +1939,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 105)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1742,6 +1949,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 105)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1752,6 +1960,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 106)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1762,6 +1971,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 106)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1773,6 +1983,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 7;
         GOTO_LOOP;
     TARGET(0, 107)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1782,6 +1993,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 107)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1792,6 +2004,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 108)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1800,6 +2013,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 108)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1809,6 +2023,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 109)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1818,6 +2033,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 109)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1828,6 +2044,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 110)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1836,6 +2053,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 110)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1845,6 +2063,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 111)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1852,6 +2071,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 111)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1860,12 +2080,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 112)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 112)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1873,6 +2095,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 113)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1880,6 +2103,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 113)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1888,6 +2112,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 114)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1896,6 +2121,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 114)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1905,6 +2131,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 115)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1912,6 +2139,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 115)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1920,6 +2148,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 116)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1928,6 +2157,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 116)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1937,6 +2167,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 117)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1946,6 +2177,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 117)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1956,6 +2188,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 118)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1964,6 +2197,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 118)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1973,6 +2207,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 119)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -1980,6 +2215,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 119)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -1988,12 +2224,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 120)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 120)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2001,6 +2239,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 121)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2008,6 +2247,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 121)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2016,6 +2256,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 122)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2024,6 +2265,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 122)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2033,6 +2275,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 123)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2040,6 +2283,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 123)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2048,12 +2292,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 124)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
         buffer.push(MOD_PUSH(5));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 124)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2061,6 +2307,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(5));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 125)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2068,6 +2315,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 125)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2076,12 +2324,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 126)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
         buffer.push(MOD_PUSH(6));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 126)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2089,28 +2339,33 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(6));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 127)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
         d.dfa_run_length = 7;
         d.dfa_state = std::uint8_t{1};
+        i += 1;
         GOTO_LOOP;
     TARGET(1, 127)
         buffer.push(MOD_PUSH(d.dfa_run_length));
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 7;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 128)
         buffer.push(MOD_PUSH(d.dfa_run_length));
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 7;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 128)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
         d.dfa_run_length = 7;
         d.dfa_state = std::uint8_t{0};
+        i += 1;
         GOTO_LOOP;
     TARGET(0, 129)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2118,12 +2373,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(6));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 129)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
         buffer.push(MOD_PUSH(6));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 130)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2132,6 +2389,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 130)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2139,6 +2397,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 131)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2146,12 +2405,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(5));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 131)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
         buffer.push(MOD_PUSH(5));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 132)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2160,6 +2421,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 132)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2167,6 +2429,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 133)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2176,6 +2439,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 133)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2184,6 +2448,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 134)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2192,6 +2457,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 134)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2199,6 +2465,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 135)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2206,12 +2473,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 135)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 136)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2220,6 +2489,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 136)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2227,6 +2497,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 137)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2236,6 +2507,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 137)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2244,6 +2516,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 138)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2254,6 +2527,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 138)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2263,6 +2537,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 139)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2272,6 +2547,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 139)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2280,6 +2556,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 140)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2288,6 +2565,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 140)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2295,6 +2573,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 141)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2304,6 +2583,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 141)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2312,6 +2592,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 142)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2320,6 +2601,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 142)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2327,6 +2609,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 143)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2334,12 +2617,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 143)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 144)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2348,6 +2633,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 144)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2355,6 +2641,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 145)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2364,6 +2651,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 145)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2372,6 +2660,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 146)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2382,6 +2671,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 146)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2391,6 +2681,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 147)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2400,6 +2691,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 147)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2408,6 +2700,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 148)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2418,6 +2711,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 148)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2427,6 +2721,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 149)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2438,6 +2733,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 7;
         GOTO_LOOP;
     TARGET(1, 149)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2448,6 +2744,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 150)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2458,6 +2755,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 150)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2467,6 +2765,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 151)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2476,6 +2775,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 151)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2484,6 +2784,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 152)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2492,6 +2793,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 152)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2499,6 +2801,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 153)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2508,6 +2811,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 153)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2516,6 +2820,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 154)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2526,6 +2831,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 154)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2535,6 +2841,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 155)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2544,6 +2851,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 155)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2552,6 +2860,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 156)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2560,6 +2869,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 156)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2567,6 +2877,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 157)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2576,6 +2887,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 157)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2584,6 +2896,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 158)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2592,6 +2905,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 158)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2599,6 +2913,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 159)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2606,12 +2921,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 5;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 159)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 5;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 160)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2620,6 +2937,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 5;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 160)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2627,6 +2945,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 5;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 161)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2636,6 +2955,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 161)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2644,6 +2964,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 162)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2654,6 +2975,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 162)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2663,6 +2985,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 163)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2672,6 +2995,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 163)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2680,6 +3004,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 164)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2690,6 +3015,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 164)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2699,6 +3025,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 165)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2710,6 +3037,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 7;
         GOTO_LOOP;
     TARGET(1, 165)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2720,6 +3048,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 166)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2730,6 +3059,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 166)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2739,6 +3069,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 167)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2748,6 +3079,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 167)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2756,6 +3088,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 168)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2766,6 +3099,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 168)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2775,6 +3109,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 169)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2786,6 +3121,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 7;
         GOTO_LOOP;
     TARGET(1, 169)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2796,6 +3132,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 170)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2808,6 +3145,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 8;
         GOTO_LOOP;
     TARGET(1, 170)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2819,6 +3157,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 7;
         GOTO_LOOP;
     TARGET(0, 171)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2830,6 +3169,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 7;
         GOTO_LOOP;
     TARGET(1, 171)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2840,6 +3180,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 172)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2850,6 +3191,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 172)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2859,6 +3201,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 173)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2870,6 +3213,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 7;
         GOTO_LOOP;
     TARGET(1, 173)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2880,6 +3224,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 174)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2890,6 +3235,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 174)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2899,6 +3245,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 175)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2908,6 +3255,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 175)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2916,6 +3264,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 176)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2924,6 +3273,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 176)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2931,6 +3281,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 177)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2940,6 +3291,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 177)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2948,6 +3300,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 178)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2958,6 +3311,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 178)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2967,6 +3321,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 179)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2976,6 +3331,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 179)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -2984,6 +3340,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 180)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -2994,6 +3351,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 180)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -3003,6 +3361,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 181)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3014,6 +3373,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 7;
         GOTO_LOOP;
     TARGET(1, 181)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -3024,6 +3384,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 182)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3034,6 +3395,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 182)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -3043,6 +3405,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 183)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3052,6 +3415,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 183)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -3060,6 +3424,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 184)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3068,6 +3433,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 184)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -3075,6 +3441,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 185)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3084,6 +3451,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 185)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -3092,6 +3460,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 186)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3102,6 +3471,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 186)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -3111,6 +3481,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 187)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3120,6 +3491,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 187)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -3128,6 +3500,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 188)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3136,6 +3509,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 188)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -3143,6 +3517,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 189)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3152,6 +3527,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 189)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -3160,6 +3536,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 190)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3168,6 +3545,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(5));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 190)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
@@ -3175,6 +3553,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(5));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 191)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3182,23 +3561,27 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 6;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 191)
         buffer.push(MOD_PUSH(d.dfa_run_length + 1));
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 6;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 192)
         buffer.push(MOD_PUSH(d.dfa_run_length));
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 6;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 192)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
         d.dfa_run_length = 6;
         d.dfa_state = std::uint8_t{0};
+        i += 1;
         GOTO_LOOP;
     TARGET(0, 193)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3206,12 +3589,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(5));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 193)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
         buffer.push(MOD_PUSH(5));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 194)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3220,6 +3605,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 194)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3227,6 +3613,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 195)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3234,12 +3621,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 195)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 196)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3248,6 +3637,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 196)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3255,6 +3645,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 197)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3264,6 +3655,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 197)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3272,6 +3664,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 198)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3280,6 +3673,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 198)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3287,6 +3681,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 199)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3294,12 +3689,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 199)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 200)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3308,6 +3705,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 200)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3315,6 +3713,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 201)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3324,6 +3723,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 201)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3332,6 +3732,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 202)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3342,6 +3743,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 202)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3351,6 +3753,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 203)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3360,6 +3763,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 203)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3368,6 +3772,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 204)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3376,6 +3781,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 204)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3383,6 +3789,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 205)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3392,6 +3799,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 205)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3400,6 +3808,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 206)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3408,6 +3817,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 206)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3415,6 +3825,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 207)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3422,12 +3833,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 207)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 208)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3436,6 +3849,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 208)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3443,6 +3857,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 209)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3452,6 +3867,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 209)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3460,6 +3876,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 210)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3470,6 +3887,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 210)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3479,6 +3897,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 211)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3488,6 +3907,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 211)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3496,6 +3916,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 212)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3506,6 +3927,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 212)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3515,6 +3937,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 213)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3526,6 +3949,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 7;
         GOTO_LOOP;
     TARGET(1, 213)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3536,6 +3960,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 6;
         GOTO_LOOP;
     TARGET(0, 214)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3546,6 +3971,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 214)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3555,6 +3981,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 215)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3564,6 +3991,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 215)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3572,6 +4000,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 216)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3580,6 +4009,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 216)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3587,6 +4017,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 217)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3596,6 +4027,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 217)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3604,6 +4036,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 218)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3614,6 +4047,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 218)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3623,6 +4057,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 219)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3632,6 +4067,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 219)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3640,6 +4076,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 220)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3648,6 +4085,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 220)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3655,6 +4093,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 221)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3664,6 +4103,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 221)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3672,6 +4112,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 222)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3680,6 +4121,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 222)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
@@ -3687,6 +4129,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 223)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3694,23 +4137,27 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 5;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 223)
         buffer.push(MOD_PUSH(d.dfa_run_length + 2));
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 5;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 224)
         buffer.push(MOD_PUSH(d.dfa_run_length));
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 5;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 224)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
         d.dfa_run_length = 5;
         d.dfa_state = std::uint8_t{0};
+        i += 1;
         GOTO_LOOP;
     TARGET(0, 225)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3718,12 +4165,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 225)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 226)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3732,6 +4181,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 226)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -3739,6 +4189,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 227)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3746,12 +4197,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 227)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 228)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3760,6 +4213,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 228)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -3767,6 +4221,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 229)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3776,6 +4231,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 229)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -3784,6 +4240,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 230)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3792,6 +4249,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 230)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -3799,6 +4257,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 231)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3806,12 +4265,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 231)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 232)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3820,6 +4281,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 232)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -3827,6 +4289,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 233)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3836,6 +4299,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 233)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -3844,6 +4308,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 234)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3854,6 +4319,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 6;
         GOTO_LOOP;
     TARGET(1, 234)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -3863,6 +4329,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 5;
         GOTO_LOOP;
     TARGET(0, 235)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3872,6 +4339,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 235)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -3880,6 +4348,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 236)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3888,6 +4357,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 236)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -3895,6 +4365,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 237)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3904,6 +4375,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 237)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -3912,6 +4384,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 238)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3920,6 +4393,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 238)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
@@ -3927,6 +4401,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 239)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3934,23 +4409,27 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 239)
         buffer.push(MOD_PUSH(d.dfa_run_length + 3));
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 240)
         buffer.push(MOD_PUSH(d.dfa_run_length));
         buffer.push(MOD_PUSH(4));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 240)
         buffer.push(MOD_PUSH(d.dfa_run_length + 4));
         d.dfa_run_length = 4;
         d.dfa_state = std::uint8_t{0};
+        i += 1;
         GOTO_LOOP;
     TARGET(0, 241)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3958,12 +4437,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 241)
         buffer.push(MOD_PUSH(d.dfa_run_length + 4));
         buffer.push(MOD_PUSH(3));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 242)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3972,6 +4453,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 242)
         buffer.push(MOD_PUSH(d.dfa_run_length + 4));
@@ -3979,6 +4461,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 243)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -3986,12 +4469,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 243)
         buffer.push(MOD_PUSH(d.dfa_run_length + 4));
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 244)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -4000,6 +4485,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 244)
         buffer.push(MOD_PUSH(d.dfa_run_length + 4));
@@ -4007,6 +4493,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 245)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -4016,6 +4503,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 5;
         GOTO_LOOP;
     TARGET(1, 245)
         buffer.push(MOD_PUSH(d.dfa_run_length + 4));
@@ -4024,6 +4512,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 4;
         GOTO_LOOP;
     TARGET(0, 246)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -4032,6 +4521,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 246)
         buffer.push(MOD_PUSH(d.dfa_run_length + 4));
@@ -4039,6 +4529,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 247)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -4046,23 +4537,27 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 247)
         buffer.push(MOD_PUSH(d.dfa_run_length + 4));
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 248)
         buffer.push(MOD_PUSH(d.dfa_run_length));
         buffer.push(MOD_PUSH(5));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 248)
         buffer.push(MOD_PUSH(d.dfa_run_length + 5));
         d.dfa_run_length = 3;
         d.dfa_state = std::uint8_t{0};
+        i += 1;
         GOTO_LOOP;
     TARGET(0, 249)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -4070,12 +4565,14 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 249)
         buffer.push(MOD_PUSH(d.dfa_run_length + 5));
         buffer.push(MOD_PUSH(2));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 250)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -4084,6 +4581,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 4;
         GOTO_LOOP;
     TARGET(1, 250)
         buffer.push(MOD_PUSH(d.dfa_run_length + 5));
@@ -4091,6 +4589,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 3;
         GOTO_LOOP;
     TARGET(0, 251)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -4098,23 +4597,27 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 251)
         buffer.push(MOD_PUSH(d.dfa_run_length + 5));
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 252)
         buffer.push(MOD_PUSH(d.dfa_run_length));
         buffer.push(MOD_PUSH(6));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 252)
         buffer.push(MOD_PUSH(d.dfa_run_length + 6));
         d.dfa_run_length = 2;
         d.dfa_state = std::uint8_t{0};
+        i += 1;
         GOTO_LOOP;
     TARGET(0, 253)
         buffer.push(MOD_PUSH(d.dfa_run_length));
@@ -4122,28 +4625,33 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 3;
         GOTO_LOOP;
     TARGET(1, 253)
         buffer.push(MOD_PUSH(d.dfa_run_length + 6));
         buffer.push(MOD_PUSH(1));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{1};
+        i += 2;
         GOTO_LOOP;
     TARGET(0, 254)
         buffer.push(MOD_PUSH(d.dfa_run_length));
         buffer.push(MOD_PUSH(7));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 2;
         GOTO_LOOP;
     TARGET(1, 254)
         buffer.push(MOD_PUSH(d.dfa_run_length + 7));
         d.dfa_run_length = 1;
         d.dfa_state = std::uint8_t{0};
+        i += 1;
         GOTO_LOOP;
     TARGET(0, 255)
         buffer.push(MOD_PUSH(d.dfa_run_length));
         d.dfa_run_length = 8;
         d.dfa_state = std::uint8_t{1};
+        i += 1;
         GOTO_LOOP;
     TARGET(1, 255)
         d.dfa_run_length += 8;
@@ -4156,6 +4664,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t length)
     }
 
     //Store last run-length
+    std::cout << "last push" << d.dfa_run_length << std::endl;
     buffer.push(MOD_PUSH(d.dfa_run_length));
 }
 

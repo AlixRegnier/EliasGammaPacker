@@ -57,9 +57,9 @@ namespace EliasGammaPacker
     using payload_t = __m256i;
     
     struct decode_partial_struct_t {
-        __m256i mask;
-        __m256i payload1;
-        __m256i payload2;
+        payload_t mask;
+        payload_t payload1;
+        payload_t payload2;
 
         selector_t selector;
 

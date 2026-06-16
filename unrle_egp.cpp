@@ -24,7 +24,7 @@ int main(int argc, char ** args) {
     std::string out_filename = args[2];
 
     //Input file
-    int in_fd = open(in_filename.c_str(), O_RDONLY);
+    int in_fd = open(in_filename.c_str(), O_RDWR);
 
     if (in_fd == -1)
     {
@@ -34,7 +34,7 @@ int main(int argc, char ** args) {
 
     std::size_t in_file_size = lseek(in_fd, 0, SEEK_END);
 
-    char* in_map = (char*)mmap(nullptr, in_file_size, PROT_READ, MAP_PRIVATE, in_fd, 0);
+    char* in_map = (char*)mmap(nullptr, in_file_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, in_fd, 0);
 
     if (in_map == MAP_FAILED)
     {

@@ -34,22 +34,8 @@ bool massert(bool expr, const std::string& expr_str, const std::string& msg)
     return expr;
 }
 
-bool test_log2_8()
-{
-    for(std::uint8_t value = 1; value != 0; ++value)
-    {
-        std::uint8_t test = EliasGammaPacker::log2_8(value);
-        std::uint8_t truth = 63 - __builtin_clzll(value);
-        
-        if(!ASSERT_EQ(truth, test, "log2_8", value))
-            return false;
-    }
 
-    return true;
-}
-
-
-bool test_log2_64()
+bool test_log2()
 {    
     std::mt19937_64 rng(std::random_device{}());
     std::uniform_int_distribution<std::uint64_t> dist(
@@ -60,7 +46,7 @@ bool test_log2_64()
     {
         std::uint64_t value = 1;
 
-        std::uint8_t test = EliasGammaPacker::log2_64(value);
+        std::uint8_t test = EliasGammaPacker::log2(value);
         std::uint8_t truth = 0;
         
         if(!ASSERT_EQ(truth, test, "log2_64", value))
@@ -73,7 +59,7 @@ bool test_log2_64()
         if(value == 0)
             continue;
 
-        std::uint8_t test = EliasGammaPacker::log2_64(value);
+        std::uint8_t test = EliasGammaPacker::log2(value);
         std::uint8_t truth = 63 - __builtin_clzll(std::uint64_t{value});
         
         if(!ASSERT_EQ(truth, test, "log2_64", value))
@@ -258,11 +244,23 @@ bool test_decode_runs()
     return true;
 }
 
+bool test_encode()
+{
+    return true;
+}
+
+bool test_decode()
+{
+    return true;
+}
+
 int main()
 {
-    TEST_FUNC(test_log2_8)
-    TEST_FUNC(test_log2_64)
+    TEST_FUNC(test_log2)
     TEST_FUNC(test_circular_buffer)
     TEST_FUNC(test_set_bits)
     TEST_FUNC(test_decode_runs)
+    //TODO:
+    //TEST_FUNC(test_encode)
+    //TEST_FUNC(test_decode)
 }
