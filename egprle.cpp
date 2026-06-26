@@ -42,7 +42,7 @@ void EGPRLE::BitRunDFA(const std::uint8_t* const input, std::size_t input_size)
         std::uint8_t byte = input[d.pos++];
 
     #ifdef COMPUTED_GOTO
-        goto *transitions[d.dfa_state][byte];
+        goto *transitions[d.state][byte];
     #else
         switch((std::uint16_t{byte} << 1) | d.state)
         {
