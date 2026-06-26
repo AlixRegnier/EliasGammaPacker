@@ -23,12 +23,18 @@ int main(int argc, char ** args) {
     std::string in_filename = args[1];
     std::string out_filename = args[2];
 
+     if(in_filename == out_filename)
+    {
+        std::cerr << "main (decoder) : input and output can't point to same file" << std::endl;
+        return 2;
+    }
+
     //Input file
     int in_fd = open(in_filename.c_str(), O_RDWR);
 
     if (in_fd == -1)
     {
-        std::cerr << "main : couldn't open file '" << in_filename << "' (" << strerror(errno) << ')' << std::endl;
+        std::cerr << "main (decoder) : couldn't open file '" << in_filename << "' (" << strerror(errno) << ')' << std::endl;
         return 2;
     }
 
@@ -38,7 +44,7 @@ int main(int argc, char ** args) {
 
     if (in_map == MAP_FAILED)
     {
-        std::cerr << "main : mmap initialization failed from '" << in_filename << "' (" << strerror(errno) << ')' << std::endl;
+        std::cerr << "main (decoder) : mmap initialization failed from '" << in_filename << "' (" << strerror(errno) << ')' << std::endl;
 
         close(in_fd);
         return 2;
@@ -51,7 +57,7 @@ int main(int argc, char ** args) {
 
     if (out_fd == -1)
     {
-        std::cerr << "main : couldn't open file '" << out_filename << "' (" << strerror(errno) << ')' << std::endl;
+        std::cerr << "main (decoder) : couldn't open file '" << out_filename << "' (" << strerror(errno) << ')' << std::endl;
         munmap(in_map, in_file_size);
         close(in_fd);
         return 2;
@@ -60,7 +66,7 @@ int main(int argc, char ** args) {
     std::size_t out_file_size = EliasGammaPacker::EGPRLE::read_meta(in_map).out_size;
     if (ftruncate(out_fd, out_file_size) == -1)
     {
-        std::cerr << "main : file resizing failed (" << strerror(errno) << ')' << std::endl;
+        std::cerr << "main (decoder) : file resizing failed (" << strerror(errno) << ')' << std::endl;
         munmap(in_map, in_file_size);
         close(in_fd);
         close(out_fd);
@@ -71,7 +77,7 @@ int main(int argc, char ** args) {
 
     if (out_map == MAP_FAILED)
     {
-        std::cerr << "main : mmap initialization failed from '" << out_filename << "' (" << strerror(errno) << ')' << std::endl;
+        std::cerr << "main (decoder) : mmap initialization failed from '" << out_filename << "' (" << strerror(errno) << ')' << std::endl;
         munmap(in_map, in_file_size);
         close(in_fd);
         close(out_fd);

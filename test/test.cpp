@@ -11,20 +11,6 @@
         if(b) std::cout << #f":\tSUCCESS" << std::endl; \
         else  std::cout << #f":\tFAILED"  << std::endl; \
     }
-
-
-
-void printByte(std::uint8_t byte, char end_chr = '\n')
-{
-    for(int i = 0; i < 8; ++i)
-    {
-        if(byte >> (7-i) & std::uint8_t{1})
-            std::cout << '1';
-        else
-            std::cout << '0';
-    }
-    std::cout << end_chr;
-}
     
 bool massert(bool expr, const std::string& expr_str, const std::string& msg)
 {
@@ -120,6 +106,27 @@ bool test_circular_buffer()
         if(!ASSERT_EQ(0, buffer[i], "CircularDoubleBuffer::clear", i))
             return false;
 
+
+    buffer.clear();
+
+    //Full with no inner modulo cycling
+    for(int i = 0; i < 19; ++i)
+        buffer.push(values[i]);
+
+    buffer.cycle();
+
+    for(int i = 19; i < 32; ++i)
+        buffer.push(values[i]);
+
+    buffer.cycle();
+
+    for(int i = 32; i < 37; ++i)
+        buffer.push(values[i]);
+
+    for(int i = 0; i < 5; ++i)
+        if(!ASSERT_EQ(values[i+32], buffer[i], "CircularDoubleBuffer::[] eq (overflow)", i))
+            return false;
+
     return true;
 }
 
@@ -167,11 +174,11 @@ bool test_set_bits()
         0b00000001
     };
 
-    for(int i = 0; i < sizeof(truth1); ++i)
+    for(unsigned i = 0; i < sizeof(truth1); ++i)
         if(!ASSERT_EQ(truth1[i], test1[i], "byte equal", i))
             return false;
 
-    for(int i = 0; i < sizeof(truth2); ++i)
+    for(unsigned i = 0; i < sizeof(truth2); ++i)
         if(!ASSERT_EQ(truth2[i], test2[i], "byte equal", i))
             return false;
 
@@ -227,14 +234,14 @@ bool test_decode_runs()
     EliasGammaPacker::EGPRLE::decode_bit_runs(test1, bit_pos1, sizeof(test1)*8, values1, 9, first_bit_value1);
     EliasGammaPacker::EGPRLE::decode_bit_runs(test2, bit_pos2, sizeof(test2)*8, values2, 10, first_bit_value2);
 
-    for(int i = 0; i < sizeof(truth1); ++i)
+    for(unsigned i = 0; i < sizeof(truth1); ++i)
         if(!ASSERT_EQ(truth1[i], test1[i], "byte equal", i))
             return false;
 
     if(!ASSERT_EQ(bit_pos1, sizeof(test1)*8, "bit_pos", bit_pos1))
         return false;
 
-    for(int i = 0; i < sizeof(truth2); ++i)
+    for(unsigned i = 0; i < sizeof(truth2); ++i)
         if(!ASSERT_EQ(truth2[i], test2[i], "byte equal", i))
             return false;
 

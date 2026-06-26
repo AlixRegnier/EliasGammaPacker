@@ -14,36 +14,12 @@
 #include "types.h"
 #include "circular_buffer.h"
 
-#include <iostream>
-
 #define isAVX2_aligned(var_name, ptr) volatile bool var_name##_AVX2_aligned = reinterpret_cast<uintptr_t>(ptr) % 32 == 0
-#include <fstream>
 
-static std::ofstream runs_txt;
-
-void static printByte(std::uint8_t byte, char end_chr = '\n')
-{
-    for(int i = 0; i < 8; ++i)
-    {
-        if(byte >> (7-i) & std::uint8_t{1})
-            std::cout << '1';
-        else
-            std::cout << '0';
-    }
-    std::cout << end_chr;
-}
-
-void static printAVX2(const __m256i* v, char header)
-{
-    const std::uint8_t * v_8 = reinterpret_cast<const std::uint8_t*>(v);
-
-    if(header)
-        std::cout << header << ":\n";
-
-    for(int i = 31; i != 0; --i)
-        printByte(v_8[i], i % 4 == 0 ? '\n' : ' ');
-    printByte(v_8[0]);
-}
+#ifdef WRITE_RUNS
+    #include <fstream>
+    static std::ofstream runs_txt;
+#endif
 
 namespace EliasGammaPacker
 {
@@ -101,9 +77,11 @@ namespace EliasGammaPacker
 
             void init_dfa(const char * const src)
             {
-                dfa_data.dfa_pos = 0;
-                dfa_data.dfa_run_length = 0;
-                dfa_data.dfa_state = (*src >> 7) & 1;
+                dfa_data.pos = 0;
+                dfa_data.run_length = 0;
+                dfa_data.state = (*src >> 7) & 1;
+                dfa_data.remainder = 0;
+                dfa_data.stop = false;
                 buffer.clear();
             }
 
@@ -126,32 +104,35 @@ namespace EliasGammaPacker
                 std::size_t offset = 0;
                 int frame_width;
 
-                init_dfa(src);
-
                 const payload_t* v1 = (const payload_t*)(buffer.ptr());
                 const payload_t* v2 = (const payload_t*)(buffer.ptr() + values_offset);
 
-                runs_txt.open("runs_encoded.txt");
+                #ifdef WRITE_RUNS
+                    runs_txt.open("runs_encoded.txt");
+                #endif
 
-                do
+                init_dfa(src);
+                BitRunDFA(reinterpret_cast<const std::uint8_t*>(src), src_size);
+
+                while(dfa_data.remainder >= nb_runs)
                 {
-                    BitRunDFA(reinterpret_cast<const std::uint8_t*>(src), src_size);
-
+                    dfa_data.remainder -= nb_runs;
                     //Process 'nb_runs' integers
                     //SIMD code Group Elias Gamma here 2x AVX2 ('nb_runs'x32)
                     //Get width (log2+1) of 'nb_runs' integers
                     {
                         run_length_t merge = run_length_t{1};
-                        
-                        int i = 0;
-                        for(; i < nb_runs; ++i)
+
+                        for(int i = 0; i < nb_runs; ++i)
                             merge |= buffer[i]; //Possible to vectorize here
 
                         frame_width = log2<run_length_t>(merge)+1;
                     }
 
-                    for(int i = 0; i < nb_runs; ++i)
-                        runs_txt << buffer[i] << '\n';
+                    #ifdef WRITE_RUNS
+                        for(int i = 0; i < nb_runs; ++i)
+                            runs_txt << buffer[i]+1 << std::endl;
+                    #endif
 
                     //Enough space
                     if(frame_width <= remaining_bits)
@@ -168,9 +149,6 @@ namespace EliasGammaPacker
                     //Need to split/move to next lane
                     else 
                     {
-                        std::cout << reinterpret_cast<uintptr_t>(&payload1) << std::endl;
-                        printAVX2(&payload1, '1');
-                        printAVX2(&payload2, '2');
                         int split_frame_width = frame_width - remaining_bits;
 
                         if(remaining_bits != 0)
@@ -196,8 +174,6 @@ namespace EliasGammaPacker
                         if(dst_pos + sizeof(selector_t) + 2*sizeof(payload_t) >= dst_end)
                             throw std::runtime_error("egprle :: encode : Out of range");
 
-                        runs_txt << *selector << '\n';
-
                         //Update pointers (need 32-byte alignment)
                         selector = reinterpret_cast<selector_t*>(dst_pos);
 
@@ -219,8 +195,81 @@ namespace EliasGammaPacker
                     buffer.cycle();
                     v1 = (const payload_t*)(buffer.ptr());
                     v2 = (const payload_t*)(buffer.ptr() + values_offset);
+
+                    BitRunDFA(reinterpret_cast<const std::uint8_t*>(src), src_size);
                 }
-                while(dfa_data.dfa_pos < src_size);
+
+                if(dfa_data.remainder != 0)
+                {
+
+                    //Process 'nb_runs' integers
+                    //SIMD code Group Elias Gamma here 2x AVX2 ('nb_runs'x32)
+                    //Get width (log2+1) of 'nb_runs' integers
+                    {
+                        run_length_t merge = run_length_t{1};
+
+                        for(int i = 0; i < dfa_data.remainder; ++i)
+                            merge |= buffer[i]; //Possible to vectorize here
+
+                        frame_width = log2<run_length_t>(merge)+1;
+                    }
+
+
+                    #ifdef WRITE_RUNS
+                        for(int i = 0; i < dfa_data.remainder; ++i)
+                            runs_txt << buffer[i]+1 << std::endl;
+                    #endif
+
+                    //Enough space
+                    if(frame_width <= remaining_bits)
+                    {
+                        //Update selector
+                        *selector |= unary<selector_t>(frame_width-1) << offset;
+
+                        payload1 = _mm256_or_si256(_mm256_slli_epi32(*v1, offset), payload1);
+                        payload2 = _mm256_or_si256(_mm256_slli_epi32(*v2, offset), payload2);
+                    }
+                    //Need to split/move to next lane
+                    else
+                    {
+                        int split_frame_width = frame_width - remaining_bits;
+
+                        if(remaining_bits != 0)
+                        {
+                            const payload_t split1_mask = _mm256_load_si256((const payload_t*)mask_lsb_not[split_frame_width]);
+
+                            //Selector low bits go to current split (split1) - nothing to do
+
+                            //Frame high bits go to current split (split1)
+                            int shift = sublane_width - frame_width;
+                            payload1 = _mm256_or_si256(_mm256_slli_epi32(_mm256_and_si256(*v1, split1_mask), shift), payload1);
+                            payload2 = _mm256_or_si256(_mm256_slli_epi32(_mm256_and_si256(*v2, split1_mask), shift), payload2);
+                        }
+
+                        //Store payloads
+                        dst_pos += sizeof(selector_t);
+                        _mm256_storeu_si256(reinterpret_cast<payload_t*>(dst_pos), payload1);
+                        dst_pos += sizeof(payload_t);
+                        _mm256_storeu_si256(reinterpret_cast<payload_t*>(dst_pos), payload2);
+                        dst_pos += sizeof(payload_t);
+
+                        //Check memory out of range
+                        if(dst_pos + sizeof(selector_t) + 2*sizeof(payload_t) >= dst_end)
+                            throw std::runtime_error("egprle :: encode : Out of range");
+
+                        //Update pointers (need 32-byte alignment)
+                        selector = reinterpret_cast<selector_t*>(dst_pos);
+
+                        //Selector high bits go to next split (split2)
+                        *selector = unary<selector_t>(split_frame_width-1);
+
+                        const payload_t split2_mask = _mm256_load_si256((const payload_t*)mask_lsb[split_frame_width]);
+
+                        //Frame low bits go to next split (split2)
+                        payload1 = _mm256_and_si256(*v1, split2_mask);
+                        payload2 = _mm256_and_si256(*v2, split2_mask);
+                    }
+                }
 
                 //Store payloads
                 dst_pos += sizeof(selector_t);
@@ -229,7 +278,6 @@ namespace EliasGammaPacker
                 _mm256_storeu_si256(reinterpret_cast<payload_t*>(dst_pos), payload2);
                 dst_pos += sizeof(payload_t);
 
-                runs_txt << *selector << '\n';
 
                 // if((dst_pos - reinterpret_cast<std::uint8_t*>(dst)) >= src_size)
                 // {
@@ -241,7 +289,11 @@ namespace EliasGammaPacker
                 meta = { .out_size = src_size, .is_raw = 0, .starting_bit_value = starting_bit_value };
 
                 write_meta(dst, meta);
-                runs_txt.close();
+
+                #ifdef WRITE_RUNS
+                    runs_txt.close();
+                #endif
+
                 return
                  + reinterpret_cast<const char*>(dst_pos)
                  - reinterpret_cast<const char*>(dst);
@@ -258,8 +310,6 @@ namespace EliasGammaPacker
                     std::memcpy(dst, src_pos, meta.out_size);
                     return meta.out_size;
                 }
-
-                int constexpr read_size = sizeof(selector_t) + 2*sizeof(payload_t);
 
                 std::uint8_t* dst_pos = reinterpret_cast<std::uint8_t*>(dst);
 
@@ -280,15 +330,15 @@ namespace EliasGammaPacker
                 payload_t* const v1 = (payload_t*)values;
                 payload_t* const v2 = (payload_t*)(values+values_offset);
 
-                int remaining_bits;
+                int remaining_bits = 0;
                 int frame_width;
 
-                runs_txt.open("runs_decoded.txt");
+                #ifdef WRITE_RUNS
+                    runs_txt.open("runs_decoded.txt");
+                #endif
 
-                while(bit_pos < bit_end)
+                while(bit_pos < bit_end && (std::size_t)(src_pos-reinterpret_cast<const std::uint8_t*>(src)) <= src_size)
                 {
-                    remaining_bits = sublane_width;
-
                     selector = *reinterpret_cast<const selector_t*>(src_pos);
                     src_pos += sizeof(selector_t);
                     payload1 = _mm256_loadu_si256(reinterpret_cast<const payload_t*>(src_pos));
@@ -297,11 +347,17 @@ namespace EliasGammaPacker
                     src_pos += sizeof(payload_t);
 
                     frame_width = trailing_zeroes(selector) + 1;
-                    runs_txt << selector << '\n';
+                    remaining_bits = sublane_width;
+
                     const payload_t mask = _mm256_load_si256((const payload_t*)mask_lsb[frame_width]);
 
                     *v1 = _mm256_add_epi32(_mm256_or_si256(_mm256_slli_epi32(*v1, frame_width), _mm256_and_si256(payload1, mask)), ones);
                     *v2 = _mm256_add_epi32(_mm256_or_si256(_mm256_slli_epi32(*v2, frame_width), _mm256_and_si256(payload2, mask)), ones);
+
+                    #ifdef WRITE_RUNS
+                        for(int i = 0; i < nb_runs; ++i)
+                            runs_txt << values[i] << std::endl;
+                    #endif
 
                     decode_bit_runs(dst_pos, bit_pos, bit_end, values, nb_runs, meta.starting_bit_value);
 
@@ -319,6 +375,12 @@ namespace EliasGammaPacker
 
                         *v1 = _mm256_add_epi32(_mm256_and_si256(payload1, mask), ones);
                         *v2 = _mm256_add_epi32(_mm256_and_si256(payload2, mask), ones);
+
+                        #ifdef WRITE_RUNS
+                            for(int i = 0; i < nb_runs; ++i)
+                                runs_txt << values[i] << std::endl;
+                        #endif
+
                         decode_bit_runs(dst_pos, bit_pos, bit_end, values, nb_runs, meta.starting_bit_value);
                         
                         payload1 = _mm256_srli_epi32(payload1, frame_width);
@@ -332,12 +394,11 @@ namespace EliasGammaPacker
                     //Extract values from payloads (last frame)
                     *v1 = payload1;
                     *v2 = payload2;
-                    
-                    //Move cursor
-                    src_pos += read_size;
                 }
 
-                runs_txt.close();
+                #ifdef WRITE_RUNS
+                    runs_txt.close();
+                #endif
 
                 return bit_pos / 8; //Number of written bytes
             }
@@ -356,7 +417,6 @@ namespace EliasGammaPacker
                 const std::uint8_t* const src_end = reinterpret_cast<const std::uint8_t*>(src) + src_size;
 
                 std::uint8_t* dst_pos = reinterpret_cast<std::uint8_t*>(dst);
-                std::uint8_t* const dst_end = reinterpret_cast<std::uint8_t*>(dst) + dst_size;
 
                 const payload_t ones = _mm256_set1_epi32(1);
 
@@ -435,7 +495,8 @@ namespace EliasGammaPacker
             //Encode 'nb_runs' runs of bits into 'dst', return current byte position
             static void decode_bit_runs(std::uint8_t* const dst, std::size_t& bit_pos, const std::size_t bit_end, const run_length_t* const runs, const std::size_t nb_runs, const bool starting_bit_value)
             {
-                int i;
+                std::size_t i = 0;
+
                 if(!starting_bit_value) //If starts by a zero, skip first run
                 {
                     if(bit_pos + runs[0] > bit_end)

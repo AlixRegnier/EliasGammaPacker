@@ -73,8 +73,6 @@ class CircularDoubleBuffer
         {
             buffer[offset++] = value;
             offset %= _size*2;
-
-            ++nb_pushed_value;
         }
 
         N* ptr()
@@ -91,11 +89,6 @@ class CircularDoubleBuffer
         std::size_t constexpr size() const
         {
             return _size;
-        }
-
-        std::size_t pushed_values() const
-        {
-            return nb_pushed_value;
         }
 
         void cycle()

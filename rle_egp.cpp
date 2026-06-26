@@ -17,6 +17,12 @@ int main(int argc, char ** args) {
     std::string in_filename = args[1];
     std::string out_filename = args[2];
 
+    if(in_filename == out_filename)
+    {
+        std::cerr << "main (encoder) : input and output can't point to same file" << std::endl;
+        return 2;
+    }
+
     //Input file
     int in_fd = open(in_filename.c_str(), O_RDONLY);
 
