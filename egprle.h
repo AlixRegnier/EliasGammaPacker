@@ -24,14 +24,14 @@
 namespace EliasGammaPacker
 {
     static const decode_partial_struct_t decode_partial_init_value = {
-        .mask = {0},
-        .payload1 = {0},
-        .payload2 = {0},
-        .selector = {0},
-        .remaining_bits = {0},
-        .frame_width = sublane_width,
-        .bit_pos = {0},
-        .next_entry_point = entry_point_t::init
+        {0}, //.mask
+        {0}, //.payload1
+        {0}, //.payload2
+        {0}, //.selector
+        {0}, //.remaining_bits
+        sublane_width, //.frame_width
+        {0}, //.bit_pos
+        entry_point_t::init //.next_entry_point
     };
 
     class EGPRLE
@@ -66,7 +66,11 @@ namespace EliasGammaPacker
                 std::uint8_t sbv = x & 1;
                 std::uint8_t ir = (x >> 1) & 1;
 
-                return metadata_struct_t{ .out_size = x >> 2, .is_raw = ir, .starting_bit_value = sbv };
+                return metadata_struct_t{
+                    x >> 2, //.out_size =
+                    ir, //.is_raw =
+                    sbv //.starting_bit_value =
+                };
             }
 
             static void write_meta(char* dst, metadata_struct_t meta)
@@ -286,7 +290,11 @@ namespace EliasGammaPacker
                 //     meta = { .out_size = src_size, .is_raw = 1, .starting_bit_value = starting_bit_value };
                 // }
                 // else
-                meta = { .out_size = src_size, .is_raw = 0, .starting_bit_value = starting_bit_value };
+                meta = {
+                    src_size,  //.out_size
+                    0,  //.is_raw
+                    starting_bit_value //.starting_bit_value
+                };
 
                 write_meta(dst, meta);
 

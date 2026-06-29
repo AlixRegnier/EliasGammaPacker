@@ -1,8 +1,10 @@
 #include "egprle.h"
 
 //Computed goto if on compiler supporting label addressing through variables
-#if !defined(NO_COMPUTED_GOTO) && (defined(__GNUC__) || defined(__clang__))
+#if defined(COMPUTED_GOTO) && (defined(__GNUC__) || defined(__clang__))
     #define COMPUTED_GOTO
+#else
+    #undef COMPUTED_GOTO
 #endif
 
 #ifdef COMPUTED_GOTO
