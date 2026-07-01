@@ -10,7 +10,6 @@ class CircularDoubleBuffer
         alignas(32) N buffer[_size*2] = {0};
         std::size_t offset = {0};
         std::size_t get_offset = {0};
-        std::size_t nb_pushed_value = {0};
     public:
         CircularDoubleBuffer() noexcept {}
 
@@ -25,12 +24,15 @@ class CircularDoubleBuffer
         }
 
         CircularDoubleBuffer(CircularDoubleBuffer<N, _size>&& other) noexcept
-            : buffer(other.buffer), offset(other.offset), get_offset(other.get_offset) {}
+            : offset(other.offset), get_offset(other.get_offset)
+        {
+            std::memcpy(buffer, other.buffer, sizeof(buffer));
+        }
 
-        CircularDoubleBuffer<N, _size>& operator=(CircularDoubleBuffer<N, _size>&& other) noexcept {
-            if (this != &other) 
+        CircularDoubleBuffer<N, _size>& operator=(CircularDoubleBuffer<N, _size>&& other) noexcept
+        {
+            if (this != &other)
             {
-                this->buffer = other.buffer;
                 this->offset = other.offset;
                 this->get_offset = other.get_offset;
                 std::memcpy(this->buffer, other.buffer, sizeof(other.buffer));
@@ -53,45 +55,45 @@ class CircularDoubleBuffer
 
         const N& operator[](std::size_t i) const
         {
-            return *(ptr()+i);
+            //return *(ptr()+i)
+            return buffer[get_offset + i];
         }
 
-        void clear()
+        constexpr void clear() noexcept
         {
             offset = 0;
             get_offset = 0;
-            nb_pushed_value = 0;
             std::memset(buffer, 0, 2*sizeof(N)*_size);
         }
 
-        virtual ~CircularDoubleBuffer()
+        ~CircularDoubleBuffer() noexcept
         {
             clear();
         }
     
-        void push(const N& value)
+        constexpr void push(const N& value) noexcept
         {
             buffer[offset++] = value;
-            offset %= _size*2;
+            offset %= _size*2; //should be optimized by compiler as "offset &= _size*2-1;"
         }
 
-        N* ptr()
+        constexpr N* ptr() noexcept
         {
             return buffer + get_offset;
         }
 
-        const N* ptr() const
+        constexpr const N* ptr() const noexcept
         {
             return buffer + get_offset;
         }
 
         //Warning: May return "_size" if empty.
-        std::size_t constexpr size() const
+        constexpr std::size_t size() const noexcept
         {
             return _size;
         }
 
-        void cycle()
+        constexpr void cycle() noexcept
         {
             get_offset ^= _size;
         }
