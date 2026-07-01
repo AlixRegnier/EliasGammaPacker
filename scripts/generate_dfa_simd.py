@@ -272,23 +272,23 @@ for b in range(256):
 
         if a == (b >> 7): #If a run is overlapping a and b
             if b == 255 or b == 0:
-                print(f"    d.run_length += {table[b][0]};")
-                print(f"    d.state = std::uint8_t{'{'}{b & 1}{'}'};")
+                print(f"    dfa_data.run_length += {table[b][0]};")
+                print(f"    dfa_data.state = std::uint8_t{'{'}{b & 1}{'}'};")
                 print(f"    GOTO_LOOP;")
                 continue
             else:
-                print(f"    buffer.push(MOD_PUSH(d.run_length + {table[b][0]}));")
+                print(f"    buffer.push(MOD_PUSH(dfa_data.run_length + {table[b][0]}));")
                 i += 1
                 starting_index = 1
         else: #Break
-            print(f"    buffer.push(MOD_PUSH(d.run_length));")
+            print(f"    buffer.push(MOD_PUSH(dfa_data.run_length));")
             i += 1
 
         for j in range(starting_index, len(table[b])-1):
             print(f"    buffer.push(MOD_PUSH({table[b][j]}));")
             i += 1
             
-        print(f"    d.run_length = {table[b][-1]};")
-        print(f"    d.state = std::uint8_t{'{'}{b & 1}{'}'};")
-        print(f"    d.remainder += {i};")
+        print(f"    dfa_data.run_length = {table[b][-1]};")
+        print(f"    dfa_data.state = std::uint8_t{'{'}{b & 1}{'}'};")
+        print(f"    dfa_data.remainder += {i};")
         print("    GOTO_LOOP;")
