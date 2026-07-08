@@ -345,7 +345,7 @@ namespace EliasGammaPacker
                     runs_txt.open("runs_decoded.txt");
                 #endif
 
-                while(bit_pos < bit_end && (std::size_t)(src_pos-reinterpret_cast<const std::uint8_t*>(src)) <= src_size)
+                while(bit_pos < bit_end)
                 {
                     selector = *reinterpret_cast<const selector_t*>(src_pos);
                     src_pos += sizeof(selector_t);
@@ -411,6 +411,7 @@ namespace EliasGammaPacker
                 return bit_pos / 8; //Number of written bytes
             }
 
+            //Not working; to be recoded later, taking decode() changes into account
             std::size_t decode_partial(char* dst, std::size_t dst_size, const char* src, std::size_t src_size, std::size_t decode_until_size)
             {
                 decode_partial_struct_t& d = decode_partial_data;

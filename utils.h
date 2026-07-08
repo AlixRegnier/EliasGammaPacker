@@ -6,16 +6,16 @@
 
 namespace EliasGammaPacker
 {
-    static const int nb_runs = 16;
-    static const int lane_width = 256;
-    static const int lane_nb = 2;
-    static const int sublane_width = lane_width * lane_nb / nb_runs;
-    static const int selector_width = sublane_width;
-    static const int values_offset = nb_runs / 2;
+    constexpr int nb_runs = 16;
+    constexpr int lane_width = 256;
+    constexpr int lane_nb = 2;
+    constexpr int sublane_width = 32;
+    constexpr int selector_width = sublane_width;
+    constexpr int values_offset = nb_runs / 2;
 
     #define V8_x_32(x) {x, x, x, x, x, x, x, x}
 
-    alignas(32) static const std::uint32_t mask_lsb[33][8] =
+    alignas(32) static constexpr std::uint32_t mask_lsb[33][8] =
     {
         V8_x_32(std::uint32_t{0x0}),
         V8_x_32(std::uint32_t{0x01}),
@@ -52,7 +52,7 @@ namespace EliasGammaPacker
         V8_x_32(std::uint32_t{0xFFFFFFFF}),
     };
 
-    alignas(32) static const std::uint32_t mask_lsb_not[33][8] =
+    alignas(32) static constexpr std::uint32_t mask_lsb_not[33][8] =
     {
         V8_x_32(~std::uint32_t{0x0}),
         V8_x_32(~std::uint32_t{0x01}),
@@ -89,7 +89,7 @@ namespace EliasGammaPacker
         V8_x_32(~std::uint32_t{0xFFFFFFFF}),
     };
 
-    static const std::uint8_t bit_run_mask[9] =
+    static constexpr std::uint8_t bit_run_mask[9] =
     {
         std::uint8_t{0x0},
         std::uint8_t{0x01},
@@ -104,7 +104,7 @@ namespace EliasGammaPacker
 
     #undef V8_x_32
 
-    static const std::uint8_t LUT_log2_8[] = {
+    static constexpr std::uint8_t LUT_log2_8[] = {
    255, 0, 1, 1, 2, 2, 2, 2,
      3, 3, 3, 3, 3, 3, 3, 3,
      4, 4, 4, 4, 4, 4, 4, 4,
@@ -140,7 +140,7 @@ namespace EliasGammaPacker
 };
 
     // Swap bytes of a 64-bit integer to big endian
-    std::uint64_t inline toBigEndian64(std::uint64_t val) {
+    constexpr std::uint64_t toBigEndian64(std::uint64_t val) {
         #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
             return val;  // Already big endian
         #else
@@ -149,7 +149,7 @@ namespace EliasGammaPacker
     }
     
     // Swap bytes of a 64-bit integer to little endian
-    std::uint64_t inline toLittleEndian64(std::uint64_t val) {
+    constexpr std::uint64_t toLittleEndian64(std::uint64_t val) {
         #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
             return val;  // Already little endian
         #else
@@ -158,7 +158,7 @@ namespace EliasGammaPacker
     }
 
     template <typename T>
-    int inline log2(T value)
+    constexpr int log2(T value)
     {
         if constexpr (sizeof(T)*8 <= 8)
             return LUT_log2_8[value];
@@ -169,13 +169,13 @@ namespace EliasGammaPacker
     }
     
     template<typename T>
-    T inline unary(T x)
+    constexpr T unary(T x)
     {
         return T{1} << x;
     }
 
     //TODO: compile-time fallback if __builtin_ctz is not available
-    int inline trailing_zeroes(int x)
+    constexpr int trailing_zeroes(int x)
     {
         return __builtin_ctz(x);
     }
