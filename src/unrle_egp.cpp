@@ -10,7 +10,7 @@
 #include <vector>
 #include <cstring>
 
-#include "egprle.h"
+#include <egprle.h>
 
 int main(int argc, char ** args) {
 

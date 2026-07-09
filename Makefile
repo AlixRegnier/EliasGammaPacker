@@ -1,36 +1,50 @@
-CPPFLAGS=-O3 -std=c++17 -march=native -mavx2 -Wall
-DEBUG_FLAGS=-O0 -g -std=c++17 -march=native -mavx2 -Wall
+CPPFLAGS=-O3 -std=c++17 -pedantic -march=native -mavx2 -Wall -I./include #-DWRITE_RUNS
+DEBUG_FLAGS=-O0 -g -std=c++17 -march=native -mavx2 -Wall -I./include #-DWRITE_RUNS
+BENCH_FLAGS=-O3 -std=c++17 -march=native -mavx2 -Wall -g -fno-omit-frame-pointer -I./include #-DWRITE_RUNS
 
-all: rle_egp unrle_egp
+.PHONY: main debug bench clean test
 
-debug: debug_rle_egp debug_unrle_egp
+main: lib rle_egp unrle_egp
 
-rle_egp: egprle.o rle_egp.cpp
-	g++ ${CPPFLAGS} -o rle_egp  rle_egp.cpp egprle.o
+debug: lib debug_rle_egp debug_unrle_egp
 
-unrle_egp: egprle.o unrle_egp.cpp
-	g++ ${CPPFLAGS} -o unrle_egp unrle_egp.cpp egprle.o
+bench: lib bench_rle_egp bench_unrle_egp
 
-debug_rle_egp: debug_egprle.o rle_egp.cpp
-	g++ ${DEBUG_FLAGS} -o debug_rle_egp  rle_egp.cpp debug_egprle.o
+lib:
+	@mkdir -p ./lib
 
-debug_unrle_egp: debug_egprle.o unrle_egp.cpp
-	g++ ${DEBUG_FLAGS} -o debug_unrle_egp unrle_egp.cpp debug_egprle.o
+rle_egp: lib/egprle.o src/rle_egp.cpp
+	g++ ${CPPFLAGS} -o rle_egp src/rle_egp.cpp lib/egprle.o
+
+unrle_egp: lib/egprle.o src/unrle_egp.cpp
+	g++ ${CPPFLAGS} -o unrle_egp src/unrle_egp.cpp lib/egprle.o
+
+debug_rle_egp: lib/debug_egprle.o src/rle_egp.cpp
+	g++ ${DEBUG_FLAGS} -o debug_rle_egp src/rle_egp.cpp lib/debug_egprle.o
+
+debug_unrle_egp: lib/debug_egprle.o src/unrle_egp.cpp
+	g++ ${DEBUG_FLAGS} -o debug_unrle_egp src/unrle_egp.cpp lib/debug_egprle.o
+
+bench_rle_egp: lib/bench_egprle.o src/rle_egp.cpp
+	g++ ${BENCH_FLAGS} -o bench_rle_egp src/rle_egp.cpp lib/bench_egprle.o
+
+bench_unrle_egp: lib/bench_egprle.o src/unrle_egp.cpp
+	g++ ${BENCH_FLAGS} -o bench_unrle_egp src/unrle_egp.cpp lib/bench_egprle.o
+
+lib/egprle.o: include/egprle.h src/egprle.cpp include/circular_buffer.h include/utils.h include/types.h
+	g++ ${CPPFLAGS} -c src/egprle.cpp -o lib/egprle.o
+
+lib/debug_egprle.o:  include/egprle.h src/egprle.cpp include/circular_buffer.h include/utils.h include/types.h
+	g++ ${DEBUG_FLAGS} -c src/egprle.cpp -o lib/debug_egprle.o
+
+lib/bench_egprle.o:  include/egprle.h src/egprle.cpp include/circular_buffer.h include/utils.h include/types.h
+	g++ ${BENCH_FLAGS} -c src/egprle.cpp -o lib/bench_egprle.o
+
+clean:
+	rm -f ./lib/*.o
 
 test: ./test/test.cpp
 	g++ ${CPPFLAGS} -o test_exec ./test/test.cpp
 	./test_exec
 	@rm -f test_exec
 
-egprle.o: egprle.h egprle.cpp circular_buffer.h utils.h types.h
-	g++ ${CPPFLAGS} -c egprle.cpp
-
-debug_egprle.o: egprle.h egprle.cpp circular_buffer.h utils.h types.h
-	g++ ${DEBUG_FLAGS} -c -o debug_egprle.o egprle.cpp
-
-clean:
-	rm -f epgrle.o unrle_egp rle_egp debug_rle_egp debug_unrle_egp debug_egprle.o
-
-try: debug_rle_egp debug_unrle_egp
-	./debug_rle_egp ./data/matrix_148_ecoli_reordered.cmbf out.rle
-	./debug_unrle_egp out.rle out.cmbf

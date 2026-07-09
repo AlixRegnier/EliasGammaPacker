@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <cstdint>
 #include <string>
-#include "egprle.h"
+#include <egprle.h>
 
 int main(int argc, char ** args) {
 

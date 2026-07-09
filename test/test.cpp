@@ -1,4 +1,4 @@
-#include "../egprle.h"
+#include <egprle.h>
 #include <string>
 #include <random>
 #include <iostream>
