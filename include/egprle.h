@@ -96,9 +96,6 @@ namespace EliasGammaPacker
 
                 std::uint8_t starting_bit_value = (*src >> 7) & 1;
 
-                //Zero destination
-                std::memset(dst, 0, dst_size);
-
                 //Need 32-byte alignment
                 selector_t* selector = reinterpret_cast<selector_t*>(dst_pos);
                 payload_t payload1 = {0};
@@ -326,9 +323,6 @@ namespace EliasGammaPacker
                 std::size_t bit_pos = 0;
                 const std::size_t bit_end = dst_size*8;
 
-                //Zero destination
-                std::memset(dst, 0, dst_size);
-
                 selector_t selector;
 
                 payload_t payload1;
@@ -411,6 +405,7 @@ namespace EliasGammaPacker
                 return bit_pos / 8; //Number of written bytes
             }
 
+            //Not implemented yet
             std::size_t decode_partial(char* dst, std::size_t dst_size, const char* src, std::size_t src_size, std::size_t decode_until_size)
             {
                 decode_partial_struct_t& d = decode_partial_data;
@@ -529,15 +524,14 @@ namespace EliasGammaPacker
                 }
 
                 //Update offset is last run is a run of 0s
-                if(nb_runs % 2 == starting_bit_value)
+                if(nb_runs % 2 == starting_bit_value && bit_pos + runs[nb_runs-1] <= bit_end)
                 {
-                    if(bit_pos + runs[nb_runs-1] > bit_end)
-                        return;
                     setBits(dst, bit_pos, runs[nb_runs-1]);
                     bit_pos += runs[nb_runs-1];
                 }
             }
 
+            //Assumes that destination is zeroed.
             static void setBits(std::uint8_t* dst, std::size_t startBit, std::size_t count)
             {
                 std::size_t endBit    = startBit + count - 1; // last bit to set (inclusive)
