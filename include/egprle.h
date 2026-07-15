@@ -96,7 +96,6 @@ namespace EliasGammaPacker
 
                 std::uint8_t starting_bit_value = (*src >> 7) & 1;
 
-                //Need 32-byte alignment
                 selector_t* selector = reinterpret_cast<selector_t*>(dst_pos);
                 payload_t payload1 = {0};
                 payload_t payload2 = {0};

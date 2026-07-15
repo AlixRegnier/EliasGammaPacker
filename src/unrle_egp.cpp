@@ -64,9 +64,10 @@ int main(int argc, char ** args) {
     }
 
     std::size_t out_file_size = EliasGammaPacker::EGPRLE::read_meta(in_map).out_size;
-    if (ftruncate(out_fd, out_file_size) == -1)
+
+    if (posix_fallocate(out_fd, 0, out_file_size) != 0)
     {
-        std::cerr << "main (decoder) : file resizing failed (" << strerror(errno) << ')' << std::endl;
+        std::cerr << "main (decoder) : posix_fallocate failed from '" << out_filename << "' (" << strerror(errno) << ')' << std::endl;
         munmap(in_map, in_file_size);
         close(in_fd);
         close(out_fd);
