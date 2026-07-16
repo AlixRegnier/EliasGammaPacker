@@ -14,16 +14,32 @@
 
 int main(int argc, char ** args) {
 
-    if(argc != 3)
+    if(argc != 4)
     {
-        std::cout << "Usage: unrle_egp <input> <output>\n" << std::endl;
+        std::cout << "Usage: unrle_egp <input> <output> <0|1>\n" << std::endl;
         return 1;
     }
 
     std::string in_filename = args[1];
     std::string out_filename = args[2];
+    bool starting_bit_value;
 
-     if(in_filename == out_filename)
+    {
+        std::string tmp = args[3];
+
+        if(tmp == "0")
+            starting_bit_value = false;
+        else if(tmp == "1")
+            starting_bit_value = true;
+        else
+        {
+            std::cerr << "main (decoder) : unexpected starting bit value. Must be 0 or 1" << std::endl;
+            return 2;
+        }
+    }
+
+
+    if(in_filename == out_filename)
     {
         std::cerr << "main (decoder) : input and output can't point to same file" << std::endl;
         return 2;
@@ -87,7 +103,6 @@ int main(int argc, char ** args) {
 
     posix_madvise(out_map, out_file_size, MADV_SEQUENTIAL);
 
-    bool starting_bit_value = (*in_map >> 7) & 1;
     std::size_t written_bytes = EliasGammaPacker::EGPRLE().decode(out_map, out_file_size, in_map, in_file_size, starting_bit_value);
 
     if(written_bytes != out_file_size)
