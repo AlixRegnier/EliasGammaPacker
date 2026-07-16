@@ -87,7 +87,8 @@ int main(int argc, char ** args) {
 
     posix_madvise(out_map, out_file_size, MADV_SEQUENTIAL);
 
-    std::size_t written_bytes = EliasGammaPacker::EGPRLE().decode(out_map, out_file_size, in_map, in_file_size);
+    bool starting_bit_value = (*in_map >> 7) & 1;
+    std::size_t written_bytes = EliasGammaPacker::EGPRLE().decode(out_map, out_file_size, in_map, in_file_size, starting_bit_value);
 
     if(written_bytes != out_file_size)
     {

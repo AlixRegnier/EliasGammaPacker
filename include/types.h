@@ -73,7 +73,6 @@ namespace EliasGammaPacker
     struct bit_run_dfa_struct_t {
         std::size_t pos;
         run_length_t run_length;
-        std::uint8_t remainder;
         std::uint8_t state;
         bool stop;
     };

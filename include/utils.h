@@ -15,7 +15,7 @@ namespace EliasGammaPacker
 
     #define V8_x_32(x) {x, x, x, x, x, x, x, x}
 
-    alignas(32) static const std::uint32_t mask_lsb[33][8] =
+    alignas(32) static constexpr std::uint32_t mask_lsb[33][8] =
     {
         V8_x_32(std::uint32_t{0x0}),
         V8_x_32(std::uint32_t{0x01}),
@@ -52,7 +52,7 @@ namespace EliasGammaPacker
         V8_x_32(std::uint32_t{0xFFFFFFFF}),
     };
 
-    alignas(32) static const std::uint32_t mask_lsb_not[33][8] =
+    alignas(32) static constexpr std::uint32_t mask_lsb_not[33][8] =
     {
         V8_x_32(~std::uint32_t{0x0}),
         V8_x_32(~std::uint32_t{0x01}),
@@ -89,7 +89,7 @@ namespace EliasGammaPacker
         V8_x_32(~std::uint32_t{0xFFFFFFFF}),
     };
 
-    static const std::uint8_t bit_run_mask[9] =
+    static constexpr std::uint8_t bit_run_mask[9] =
     {
         std::uint8_t{0x0},
         std::uint8_t{0x01},
@@ -104,7 +104,7 @@ namespace EliasGammaPacker
 
     #undef V8_x_32
 
-    static const std::uint8_t LUT_log2_8[] = {
+    static constexpr std::uint8_t LUT_log2_8[] = {
    255, 0, 1, 1, 2, 2, 2, 2,
      3, 3, 3, 3, 3, 3, 3, 3,
      4, 4, 4, 4, 4, 4, 4, 4,
