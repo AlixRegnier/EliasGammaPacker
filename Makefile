@@ -42,6 +42,9 @@ $(BIN)unrle_egp: $(OBJ) src/unrle_egp.cpp
 $(OBJ): src/egprle.cpp $(HEADERS) | lib
 	$(CXX) $(CFLAGS) -c $< -o $@
 
+lib:
+	@mkdir -p lib
+
 clean:
 	rm -f ./lib/*.o
 	rm -f ./*rle_egp*
